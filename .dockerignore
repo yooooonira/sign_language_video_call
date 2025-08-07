@@ -1,0 +1,14 @@
+# Git
+.git
+.gitignore
+# 로컬의 Docker디렉토리 (볼륨,로컬 설정)
+.docker
+# Python
+app/__pycache__/
+app/*/__pycache__/
+app/*/*/__pycache__/
+app/*/*/*/__pycache__/
+# 로컬의 가상환경을 미포함
+.env/
+.venv/
+venv/
