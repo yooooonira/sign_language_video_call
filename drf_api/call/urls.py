@@ -6,3 +6,4 @@ urlpatterns = [
     path("", views.test_view),
 
 ]
+
