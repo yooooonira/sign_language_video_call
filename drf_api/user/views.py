@@ -6,6 +6,7 @@ from core.utils.generate_name import generate_unique_username
 from core.views import SupabaseJWTAuthentication
 from rest_framework import status
 from user.models import Profile
+from credit.models import Credits
 from .serializers import ProfileSerializer,UserSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
@@ -34,7 +35,7 @@ class SocialSignupView(APIView):
             nickname = generate_unique_username()
 
         Profile.objects.create(user=user, nickname=nickname)
-
+        Credits.objects.get_or_create(user=user)
         return Response({"message": "User profile created."}, status=status.HTTP_201_CREATED)
 
 
@@ -64,6 +65,7 @@ class EmailSignupView(APIView):
         if Profile.objects.filter(nickname=nickname).exists():
             nickname = generate_unique_username()
         Profile.objects.create(user=user, nickname=nickname)
+        Credits.objects.get_or_create(user=user)
 
         return Response({"nickname": nickname}, status=status.HTTP_201_CREATED)
 
