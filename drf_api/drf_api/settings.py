@@ -24,7 +24,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY','changeme')
 SUPABASE_JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET')
 FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL')
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
-
+TOSS_SECRET_KEY = os.environ.get('TOSS_SECRET_KEY')
 ALLOWED_HOSTS = []
 ALLOWED_HOSTS.extend(
     filter(
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "core",
     "user",
     "payment",
+    "corsheaders",
     "call",
     "credit",
     "friend",
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
