@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path,include
 from . import views
 
 #api/friends
@@ -13,6 +13,6 @@ urlpatterns = [
     path("requests/<int:pk>/accept/", views.FriendRequestAcceptView.as_view()),  #친구 수락 post
     path("requests/<int:pk>/reject/", views.FriendRequestRejectView.as_view()),  #친구 거절 post
 
-
+   
 
 ]
