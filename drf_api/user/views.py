@@ -9,6 +9,7 @@ from user.models import Profile
 from credit.models import Credits
 from .serializers import ProfileSerializer,UserSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.exceptions import ValidationError
 
 # 소셜 로그인/회원가입(profile)
 class SocialSignupView(APIView):
@@ -85,14 +86,19 @@ class UserViewSet(viewsets.ViewSet):
         profile = getattr(user, "profile", None)
         if not profile:
             return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
-        print("request.data",request.data)
         serializer = ProfileSerializer(
-        profile,
-        data=request.data,
-        partial=True,
+            profile,
+            data=request.data,
+            partial=True,
+            context={'request': request}
         )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ValidationError as e:
+            print("Validation errors:", e.detail)  # 서버 콘솔에 에러 메시지 출력
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+
         return Response(serializer.data)
 
     def destroy(self, request):
