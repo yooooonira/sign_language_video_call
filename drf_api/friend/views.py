@@ -5,13 +5,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import FriendRelations, Friend
 from .serializers import FriendRequestSerializer,FriendListSerializer,FriendDetailSerializer
-
+from .pagination import DefaultPagination
 class AuthOnly(permissions.IsAuthenticated): # 로그인 한 사용자만 사용 가능
     pass
 
 class FriendListView(generics.ListAPIView):  # 친구 목록 조회 (프사, 닉네임, 이메일)
     permission_classes = [AuthOnly]
     serializer_class = FriendListSerializer
+    pagination_class = DefaultPagination
 
     def get_queryset(self):
         me = self.request.user
@@ -43,16 +44,18 @@ class FriendDetailDeleteView(APIView):   #친구 프로필 조회, 친구 삭제
 class ReceivedRequestListView(generics.ListAPIView): #친추 받은 목록 조회 
     permission_classes = [AuthOnly]
     serializer_class = FriendRequestSerializer
+    pagination_class = DefaultPagination
 
     def get_queryset(self):
-        return (FriendRelations.objects.filter(to_user=self.request.user, status='PENDING').select_related('from_user__profile'))
+        return (FriendRelations.objects.filter(to_user=self.request.user, status='PENDING').select_related('from_user__profile').order_by('-id') )
 
 class SentRequestListView(generics.ListAPIView): #친추 보낸 목록 조회 
     permission_classes = [AuthOnly]
     serializer_class = FriendRequestSerializer
+    pagination_class = DefaultPagination
 
     def get_queryset(self):
-        return (FriendRelations.objects.filter(from_user=self.request.user, status='PENDING').select_related('to_user__profile'))
+        return (FriendRelations.objects.filter(from_user=self.request.user, status='PENDING').select_related('to_user__profile').order_by('-id') )
 
 class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
     permission_classes = [AuthOnly]
