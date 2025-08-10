@@ -13,4 +13,4 @@ class CallHistory(models.Model):
     used_credits = models.IntegerField(default=0)
 
     call_status = models.CharField(max_length=10, choices=CALL_STATUS_CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
+    called_at   = models.DateTimeField(auto_now_add=True)
