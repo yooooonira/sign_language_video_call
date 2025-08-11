@@ -25,4 +25,6 @@ urlpatterns = [
     path("api/notifications/", include("notification.urls")),
     path("api/calls/", include("call.urls")),
     path("api/friends/", include("friend.urls")),
+
+     path('api-auth/', include('rest_framework.urls')),
 ]
