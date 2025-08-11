@@ -5,10 +5,6 @@ from .models import Credits
 from .serializers import CreditsSerializer
 from core.views import SupabaseJWTAuthentication
 import requests
-# from rest_framework.permissions import IsAuthenticated
-# from rest_framework.pagination import PageNumberPagination
-# from .models import CreditLog
-# from .serializers import CreditLogSerializer
 
 
 class CreditDetailView(APIView):
