@@ -1,28 +1,34 @@
-FROM python:3.12-slim
+FROM python:3.11-alpine
 LABEL maintainer="yooooonira"
 
-ENV PYTHONUNBUFFERED=1
-WORKDIR /app
+ENV PYTHONUNBUFFERED 1
 
-#패키지 설치 및 Python deps 설치
 COPY ./requirements.txt /tmp/requirements.txt
 COPY ./requirements.dev.txt /tmp/requirements.dev.txt
+COPY ./scripts /scripts
 COPY . /app
+WORKDIR /app
+EXPOSE 8000
 
-ARG DEV=false
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        libpq-dev \
-    && pip install --upgrade pip \
-    && pip install -r /tmp/requirements.txt \
-    && if [ "$DEV" = "true" ]; then pip install -r /tmp/requirements.dev.txt; fi \
-    && apt-get purge -y --auto-remove build-essential libpq-dev \
-    && apt-get install -y --no-install-recommends libpq5 \
-    && rm -rf /var/lib/apt/lists/* /tmp
+ARG DEV=true
 
+RUN python -m venv /py && \
+    /py/bin/pip install --upgrade pip && \
+    apk add --update --no-cache postgresql-client jpeg-dev && \
+    apk add --update --no-cache --virtual .tmp-build-deps \
+        build-base postgresql-dev musl-dev zlib zlib-dev linux-headers && \
+    /py/bin/pip install -r /tmp/requirements.txt && \
+    if [ "$DEV" = "true" ]; then /py/bin/pip install -r /tmp/requirements.dev.txt ; fi && \
+    rm -rf /tmp && \
+    apk del .tmp-build-deps && \
+    adduser --disabled-password --no-create-home django-user && \
+    mkdir -p /vol/web/media /vol/web/static && \
+    chown -R django-user:django-user /vol && \
+    chmod -R 755 /vol && \
+    chmod -R +x /scripts
 
-#유저 추가 및 권한 설정
-RUN adduser --disabled-password --gecos "" django-user
+ENV PATH="/scripts:/py/bin:$PATH"
+
 USER django-user
 
-EXPOSE 8000
+CMD ["run.sh"]
