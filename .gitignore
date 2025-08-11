@@ -143,3 +143,4 @@ cython_debug/
 .pypirc
 # fronten
 ../frontend/
+.static
