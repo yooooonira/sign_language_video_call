@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "credit",
     "friend",
     "notification",
+    "rest_framework",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
