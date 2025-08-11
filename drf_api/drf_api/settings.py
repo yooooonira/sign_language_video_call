@@ -11,43 +11,54 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY','changeme')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
+SUPABASE_JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET')
+FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL')
+DEBUG = bool(int(os.environ.get('DEBUG', 0)))
+TOSS_SECRET_KEY = os.environ.get('TOSS_SECRET_KEY')
 ALLOWED_HOSTS = []
+ALLOWED_HOSTS.extend(
+    filter(
+        None,
+        os.environ.get('DJANGO_ALLOWED_HOSTS','').split(',')
+    )
+)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
 
-
-# Application definition
 
 INSTALLED_APPS = [
-    "core", 
+    "core",
     "user",
     "payment",
+    "corsheaders",
     "call",
     "credit",
     "friend",
     "notification",
     "rest_framework",
+    'drf_spectacular',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -132,12 +143,14 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = "/static/static/"
 AUTH_USER_MODEL = "user.User"
-MEDIA_URL = "/static/media/"
-MEDIA_ROOT = "/vol/web/media"
-STATIC_ROOT = "/vol/web/static"
+
+
+STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+
+STATIC_ROOT = '/vol/web/static'
+MEDIA_ROOT = '/vol/web/media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
