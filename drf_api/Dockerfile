@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         libpq-dev \
     && pip install --upgrade pip \
+    && pip install PyJWT \
     && pip install -r /tmp/requirements.txt \
     && if [ "$DEV" = "true" ]; then pip install -r /tmp/requirements.dev.txt; fi \
     && apt-get purge -y --auto-remove build-essential libpq-dev \
