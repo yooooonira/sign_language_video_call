@@ -11,9 +11,9 @@ class CreditDetailView(APIView):
     authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, requests):
+    def get(self, request):
         try:
-            credit = Credits.objects.get(user=requests.user)
+            credit = Credits.objects.get(user=request.user)
         except Credits.DoesNotExist:
             return Response({"detail": "Credit account not found."}, status=status.HTTP_404_NOT_FOUND)
 
