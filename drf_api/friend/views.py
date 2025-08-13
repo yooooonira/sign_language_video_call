@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import FriendRelations, Friend
 from .serializers import FriendListSerializer,FriendDetailSerializer,ReceivedRequestSerializer,SentRequestSerializer,FriendRequestCreateSerializer,FriendRequestDetailSerializer,FriendListSerializer
-
+from django.shortcuts import get_object_or_404
 from .pagination import DefaultPagination
 from rest_framework.exceptions import NotFound
 from django.contrib.auth import get_user_model
@@ -98,26 +98,79 @@ class SentRequestListView(generics.ListAPIView): #친추 보낸 목록 조회
                 .order_by("-id") )
 
 
-#Post니까 generics.CreateAPIView
 class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
     permission_classes = [AuthOnly]
-    serializer_class = FriendRequestCreateSerializer #요청값에 대한 시리얼라이저
+    serializer_class = FriendRequestCreateSerializer 
 
-    #CreateAPIView는 create()메서드를 오버라이드 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
-        # 입력 검증 & 저장 (입력용)
-        serializer = self.get_serializer(data=request.data) #get_serializer()는 serializer_class에서 설정한 시리얼라이저를 자동으로 사용.
-        #입력된(요청된)데이터를 FriendRequestCreateSerializer에 넣어서 인스턴스 생성한게 serializer
-        serializer.is_valid(raise_exception=True) #그 요청된게 타당하면 
-        instance = serializer.save()  #저장한다. 
+        me = request.user
 
-        # 응답용
-        out = FriendRequestDetailSerializer( #응답을 위한 시리얼라이즈
-            instance,
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        to_user = serializer.validated_data["to_user"]
+
+        # 내가 나한테
+        if me.id == to_user.id:
+            return Response({
+                "outcome": "SELF_REQUEST",
+                "state": "INVALID",
+                "message": "자기 자신에게는 친구 요청을 보낼 수 없습니다."
+            }, status=status.HTTP_200_OK)
+
+        # 이미 친구 
+        friend = (Friend.objects
+                  .filter(users=me)          
+                  .filter(users=to_user) 
+                  .annotate(cnt=Count('users', distinct=True))
+                  .filter(cnt=2)
+                  .first()
+        )
+        if friend:
+            return Response({
+                "outcome": "Already_friends",
+                "state": "friends",
+                "friend_id": friend.id
+            }, status=status.HTTP_200_OK)
+
+        # 상대가 이미 친구 보낸 상태 
+        inbound = (FriendRelations.objects
+                   .filter(from_user=to_user, to_user=me, status="PENDING")
+                   .first()
+                   )
+        if inbound:
+            return Response({
+                "outcome":"Already_inbound",
+                "state":"PENDING_inbound",
+                "inbound_request_id": inbound.id,
+                "message":"상대방이 이미 친구 요청을 보냈어요. 수락/거절하세요."
+            }, status=status.HTTP_200_OK)
+        
+        # 내가 이미 친구 보낸 상태
+        outbound = (FriendRelations.objects
+            .filter(from_user=me, to_user=to_user, status="PENDING")
+            .first()
+            )
+        if outbound:
+            return Response({
+                "outcome":"Already_outbound",
+                "state":"PENDING_outbound",
+                "outbound_request_id": outbound.id
+            }, status=status.HTTP_200_OK)
+        
+        isinstance=serializer.save(from_user=me)
+
+        out = FriendRequestDetailSerializer(
+            isinstance,
             context=self.get_serializer_context()
             )
-        headers = self.get_success_headers({"id": instance.pk})
-        return Response(out.data, status=status.HTTP_201_CREATED, headers=headers)
+        headers = self.get_success_headers({"id": isinstance.pk})
+       
+        return Response({
+            "outcome":"created",
+            "state":"PENDING_outbound",
+            "request": out.data
+        }, status=status.HTTP_201_CREATED, headers=headers)
         
     
 
