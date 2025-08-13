@@ -48,7 +48,7 @@ class FriendDetailSerializer(FriendListSerializer): # 친구 프로필 조회
         model = User
         fields = ["id", "email", "profile"]
 
-        
+
 
 class ReceivedRequestSerializer(serializers.ModelSerializer): #친추 받은 목록
     user_id = serializers.IntegerField(source="id") #보기 좋게 할라고
@@ -56,7 +56,7 @@ class ReceivedRequestSerializer(serializers.ModelSerializer): #친추 받은 목
 
     class Meta:
         model = FriendRelations
-        fields = ["user_id", "from_user", "status"]
+        fields = ["id","user_id", "from_user", "status"]
 
 class SentRequestSerializer(serializers.ModelSerializer): #친추 보낸 목록
     user_id = serializers.IntegerField(source="id")
@@ -64,10 +64,11 @@ class SentRequestSerializer(serializers.ModelSerializer): #친추 보낸 목록
 
     class Meta:
         model = FriendRelations
-        fields = ["user_id", "to_user", "status"]
+        fields = ["id","user_id", "to_user", "status"]
 
 class FriendRequestCreateSerializer(serializers.ModelSerializer): #친구 추가
     to_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())   #to_user:8 --> 8user에서 친구추가 
+
 
     class Meta:
         model = FriendRelations
