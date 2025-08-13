@@ -32,30 +32,23 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 
 
 class FriendListSerializer(serializers.ModelSerializer): # 친구 목록 조회 (친구 -> 유저 -> 프로필)
-    other = serializers.SerializerMethodField()
+    profile = ProfileSerializer(read_only=True)  # select_related('profile') 결과 사용
+    cnt = serializers.IntegerField(read_only=True)  # annotate(cnt=...) 값 내려주기
 
     class Meta:
-        model = Friend
-        fields = ['id', 'other', 'created_at']
-
-    def _get_other_user(self, obj):
-        me = self.context['request'].user
-        return obj.users.exclude(id=me.id).select_related('profile').first()
-
-    def get_other(self, obj):
-        other = self._get_other_user(obj)
-        return UserSimpleSerializer(other).data if other else None
+        model = User
+        fields = ['id', 'email', 'profile', 'cnt']
 
 
       
 
-
 class FriendDetailSerializer(FriendListSerializer): # 친구 프로필 조회 
-    friends_since = serializers.DateTimeField(source='created_at', format='%Y-%m-%d')
+    profile = ProfileSerializer(read_only=True)
+    class Meta:
+        model = User
+        fields = ["id", "email", "profile"]
 
-    class Meta(FriendListSerializer.Meta):
-        fields = FriendListSerializer.Meta.fields + ['friends_since']
-
+        
 
 class ReceivedRequestSerializer(serializers.ModelSerializer): #친추 받은 목록
     user_id = serializers.IntegerField(source="id") #보기 좋게 할라고

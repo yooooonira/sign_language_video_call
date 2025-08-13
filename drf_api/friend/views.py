@@ -1,10 +1,11 @@
 from django.db import transaction
-from django.db.models import Count, Exists, OuterRef
+from django.db.models import Count, Max, Q, OuterRef,Exists
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import FriendRelations, Friend
-from .serializers import FriendListSerializer,FriendDetailSerializer,ReceivedRequestSerializer,SentRequestSerializer,FriendRequestCreateSerializer,FriendRequestDetailSerializer
+from .serializers import FriendListSerializer,FriendDetailSerializer,ReceivedRequestSerializer,SentRequestSerializer,FriendRequestCreateSerializer,FriendRequestDetailSerializer,FriendListSerializer
+
 from .pagination import DefaultPagination
 from rest_framework.exceptions import NotFound
 from django.contrib.auth import get_user_model
@@ -22,37 +23,54 @@ class FriendListView(generics.ListAPIView): #친구 목록 조회
     def get_queryset(self):
         me = self.request.user   #me : 현재 요청자 
 
-        # 내가 포함된 Friend 중 정확히 2명으로 이루어진 행만 선택
         return (
-            Friend.objects      
-            .filter(users=me) #나를 기준으로
-            .annotate(cnt=Count('users', distinct=True))  #각 friend의 사용자 수 
-            .filter(cnt=2) #사용자 수가 2면 
-            .prefetch_related('users__profile')   # 프로필(닉넴,프사,이멜)에 가져옴
-            .order_by('-created_at')
-        )
+            User.objects
+            .filter(friend__users=me)
+            .exclude(id=me.id)
+            .select_related('profile')
+            .annotate(
+                cnt=Count('friend', distinct=True),
+                last_friend_at=Max(
+                    'friend__created_at',
+                    filter=Q(friend__users=me)
+                )
+            )
+            .distinct()
+            .order_by('-last_friend_at')
+            )
 
 
 
-class FriendDetailDeleteView(generics.RetrieveDestroyAPIView):      #친구 프로필 조회, 친구 삭제
+class FriendRetrieveDeleteView(generics.RetrieveDestroyAPIView):      #친구 프로필 조회, 친구 삭제
     permission_classes = [AuthOnly]
     serializer_class = FriendDetailSerializer 
-    def get_object(self):
+    
+
+    def get_object(self): #조회
         me = self.request.user
-        other_user_id = self.kwargs["pk"]  # /api/friends/<user_id>/
-        friend = (
-            Friend.objects
-            .filter(users=me)
-            .filter(users__id=other_user_id)
-            .annotate(cnt=Count("users", distinct=True))
-            .filter(cnt=2)  # 정확히 두 명인 친구쌍만
-            .prefetch_related("users__profile")
-            .order_by('-created_at')
-            .first()
+        other_id = self.kwargs.get("pk")  
+        # return (  MultipleObjectsReturned
+        # User.objects
+        # .select_related('profile')
+        # .get(id=other_id, friend__users=me)
+        #  )
+        return(
+            User.objects
+            .filter(id=other_id, friend__users=me)  # 나와 친구인 user
+            .select_related('profile')
+            .distinct()                              # ← 중복 제거
+            .first()                                 # ← 단일 객체로
         )
-        if not friend:
-            raise NotFound(detail="친구가 아닙니다.", code="404_FRIEND_NOT_FOUND")
-        return friend
+
+
+        
+
+    def destroy(self, request, *args, **kwargs):
+        me = request.user
+        other_id = self.kwargs.get("pk")  # URL pk
+
+        Friend.objects.filter(users=me).filter(users__id=other_id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 
