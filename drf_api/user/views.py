@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from core.utils.generate_name import generate_unique_username
 from core.views import SupabaseJWTAuthentication
 from rest_framework import status
-from user.models import Profile
+from user.models import Profile,User
 from credit.models import Credits
 from .serializers import ProfileSerializer,UserSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -106,4 +106,13 @@ class UserViewSet(viewsets.ViewSet):
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class UserSearchAPIView(generics.ListAPIView):
+    serializer_class = UserSerializer
 
+    def get_queryset(self):
+        query = self.request.GET.get('q', '')
+        if query:
+            return User.objects.filter(
+                profile__nickname__icontains=query
+            ).select_related('profile')
+        return User.objects.none()
