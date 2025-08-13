@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-
+from django.db.models import Q
 
 class FriendRelations(models.Model): # 친추 T
     from_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='friend_requests_sent',on_delete=models.CASCADE)
@@ -11,7 +11,13 @@ class FriendRelations(models.Model): # 친추 T
             ('REJECTED', '거절됨')
         ])
     class Meta:
-        unique_together = ('from_user', 'to_user')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['from_user', 'to_user'],
+                condition=Q(status='PENDING'),
+                name='uniq_pending_per_direction',
+            ),
+        ]
 
 class Friend(models.Model): # 친구 관계 T
     users = models.ManyToManyField(settings.AUTH_USER_MODEL)
