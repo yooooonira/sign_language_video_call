@@ -55,4 +55,4 @@ class CallHistoryRecordView(generics.CreateAPIView): #통화 정보 기록 post
         user = self.request.user
         if not user.is_authenticated:
             raise AuthenticationFailed("인증이 필요합니다.")
-        serializer.save()  
+        serializer.save()  # caller는 serializer.create에서 request.user로 강제
