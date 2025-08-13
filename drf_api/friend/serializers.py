@@ -12,45 +12,39 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = ['nickname', 'profile_image_url']
 
 class UserSimpleSerializer(serializers.ModelSerializer):
-    profile = ProfileSerializer(read_only=True)
+    # profile = ProfileSerializer(read_only=True)
+    profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id', 'email', 'profile']
+    
+    def get_profile(self, obj):
+        # related_name이 'profile'이 아닐 수도 있으니 getattr로 안정 접근
+        p = getattr(obj, 'profile', None)
+        return ProfileSerializer(p).data if p else None
 
-
-# class FriendSerializer(serializers.ModelSerializer):  #친구 프로필 조회
-#     other = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = Friend
-#         fields = ['id', 'other', 'created_at']
-
-#     def get_other(self, obj):
-#         me = self.context['request'].user
-#         others = obj.users.exclude(id=me.id)
-#         # 안전하게 첫번째만
-#         return UserSimpleSerializer(others.first()).data if others.exists() else None
 
 class FriendListSerializer(serializers.ModelSerializer): # 친구 목록 조회 (친구 -> 유저 -> 프로필)
-    profile_image_url = serializers.SerializerMethodField()
-    nickname = serializers.SerializerMethodField()
-    email = serializers.SerializerMethodField()
-   
+    other = serializers.SerializerMethodField()
+
     class Meta:
         model = Friend
-        fields = [ 'profile_image_url', 'nickname', 'email'] 
+        fields = ['id', 'other', 'created_at']
+
     def _get_other_user(self, obj):
         me = self.context['request'].user
+        me_id = getattr(me, 'id', None)
         # 내 자신을 제외한 
-        return obj.users.exclude(id=me.id).select_related('profile').first()
+        for u in obj.users.all():
+            if u.id != me_id:
+                return u
+        return None
 
-    def get_profile_image_url(self, obj):
-        return self._get_other_user(obj).profile.profile_image_url
-    def get_nickname(self, obj):
-        return self._get_other_user(obj).profile.nickname
-    def get_email(self, obj):
-        return self._get_other_user(obj).email
+    def get_other(self, obj):
+        other = self._get_other_user(obj)
+        return UserSimpleSerializer(other, context=self.context).data if other else None
+        
     
 
 class FriendDetailSerializer(FriendListSerializer): # 친구 프로필 조회 
@@ -59,18 +53,27 @@ class FriendDetailSerializer(FriendListSerializer): # 친구 프로필 조회
     class Meta(FriendListSerializer.Meta):
         fields = FriendListSerializer.Meta.fields + ['friends_since']
 
-    def get_user_id(self, obj):
-        return self._get_other_user(obj).id
 
-
-class FriendRequestSerializer(serializers.ModelSerializer): # 친추 밪은 목록, 친구 보낸 목록, 친구 추가 
+class ReceivedRequestSerializer(serializers.ModelSerializer): #친추 받은 목록
     from_user = UserSimpleSerializer(read_only=True)
-    to_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
 
     class Meta:
         model = FriendRelations
-        fields = ['id', 'from_user', 'to_user', 'status']
-        read_only_fields = ['id', 'from_user', 'status']
+        fields = ["id", "from_user", "status"]
+
+class SentRequestSerializer(serializers.ModelSerializer): #친추 보낸 목록
+    to_user = UserSimpleSerializer(read_only=True)
+
+    class Meta:
+        model = FriendRelations
+        fields = ["id", "to_user", "status"]
+
+class FriendRequestCreateSerializer(serializers.ModelSerializer): #친구 추가
+    to_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())   #to_user:8 --> 8user에서 친구추가 
+
+    class Meta:
+        model = FriendRelations
+        fields = ["to_user"]
 
     def validate_to_user(self, to_user):
         me = self.context['request'].user
@@ -82,21 +85,31 @@ class FriendRequestSerializer(serializers.ModelSerializer): # 친추 밪은 목�
         me = self.context['request'].user
         to_user = attrs['to_user']
 
-        # 이미 친구인지 (기존 Friend 구조 그대로 사용)
-        dup = (Friend.objects.filter(users=me).filter(users=to_user).annotate(cnt=Count('users')).filter(cnt=2).exists())
-        if dup:
-            raise serializers.ValidationError({"detail": "이미 친구입니다.", "code": "409_ALREADY_FRIEND"})
+        # 이미 친구인지
+        if Friend.objects.filter(users=me).filter(users=to_user).annotate(cnt=Count('users')).filter(cnt=2).exists():
+            raise serializers.ValidationError("이미 친구입니다.")
 
-        # 내가 이미 보낸 친추
+        # 내가 이미 보낸 요청
         if FriendRelations.objects.filter(from_user=me, to_user=to_user, status='PENDING').exists():
-            raise serializers.ValidationError({"detail": "이미 친구 추가를 보냈습니다.", "code": "409_DUP_REQUEST"})
+            raise serializers.ValidationError("이미 친구 추가를 보냈습니다.")
 
-        # 상대가 이미 보낸 친추
+        # 상대방이 이미 보낸 요청
         if FriendRelations.objects.filter(from_user=to_user, to_user=me, status='PENDING').exists():
-            raise serializers.ValidationError({"detail": "이미 상대방이 친구추가를 보냈습니다.", "code": "409_OPPOSITE_PENDING"})
+            raise serializers.ValidationError("상대방이 이미 친구 요청을 보냈습니다.")
 
         return attrs
 
     def create(self, validated_data):
         me = self.context['request'].user
-        return FriendRelations.objects.create(from_user=me, to_user=validated_data['to_user'], status='PENDING')
+        return FriendRelations.objects.create(
+            from_user=me,
+            to_user=validated_data['to_user'],
+            status='PENDING'
+        )
+class FriendRequestDetailSerializer(serializers.ModelSerializer): #친구 추가 (응답용)
+    from_user = UserSimpleSerializer(read_only=True)
+    to_user = UserSimpleSerializer(read_only=True)
+
+    class Meta:
+        model = FriendRelations
+        fields = ["id", "from_user", "to_user", "status"] 

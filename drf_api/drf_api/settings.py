@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "call",
     "credit",
-    "friend",
+    # "friend",
+    "friend.apps.FriendConfig",
     "notification",
     "rest_framework",
     'drf_spectacular',
@@ -157,7 +158,13 @@ MEDIA_ROOT = '/vol/web/media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-  "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "core.views.SupabaseJWTAuthentication", 
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
 }
 
 SPECTACULAR_SETTINGS = {
