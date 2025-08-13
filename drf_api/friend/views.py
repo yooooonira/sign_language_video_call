@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Count, Max, Q, OuterRef,Exists
+from django.db.models import Count, Max, Q
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -118,6 +118,7 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
             )
         headers = self.get_success_headers({"id": instance.pk})
         return Response(out.data, status=status.HTTP_201_CREATED, headers=headers)
+        
     
 
 
@@ -156,3 +157,18 @@ class FriendRequestRejectView(APIView):  #친구 거절
         if not updated:
             return Response({"detail": "요청 없음", "code": "404_REQUEST_NOT_FOUND"}, status=404)
         return Response({"message": "친구 요청 거절됨"}, status=200)
+
+
+class FriendRequestDestroyView(generics.DestroyAPIView): # 친구 요청 취소 
+    permission_classes = [AuthOnly]
+    queryset = FriendRelations.objects.all()  # 안전하게 get_object에서 필터링
+
+    def get_object(self):
+        me = self.request.user
+        other_id = self.kwargs["pk"]
+        obj = (FriendRelations.objects
+               .filter(id=other_id, status="PENDING", from_user=me)  #대기중만
+               .first())
+        if not obj:
+            raise NotFound("취소할 보낸 요청이 없어요.")
+        return obj

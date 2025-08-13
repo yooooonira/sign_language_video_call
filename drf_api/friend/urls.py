@@ -12,6 +12,7 @@ urlpatterns = [
     path("requests/", views.FriendRequestCreateView.as_view()),  #친구 추가 post
     path("requests/<int:pk>/accept/", views.FriendRequestAcceptView.as_view()),  #친구 수락 post
     path("requests/<int:pk>/reject/", views.FriendRequestRejectView.as_view()),  #친구 거절 post
+    path("requests/<int:pk>/", views.FriendRequestDestroyView.as_view()), #친구 요청 취소 delete
 
    
 
