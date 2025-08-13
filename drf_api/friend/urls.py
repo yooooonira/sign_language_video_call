@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
 
     path("", views.FriendListView.as_view()), #친구 목록 조회 get 
-    path("<int:pk>/", views.FriendDetailDeleteView.as_view()), #친구 프로필 조회, 친구 삭제 get/delete
+    path("<int:pk>/", views.FriendRetrieveDeleteView.as_view()), #친구 프로필 조회, 친구 삭제 get/delete
     path("requests/received/", views.ReceivedRequestListView.as_view()), #친추 받은 목록 조회 get
     path("requests/sent/", views.SentRequestListView.as_view()), #친추 보낸 목록 조회 get
 
