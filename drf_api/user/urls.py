@@ -11,6 +11,7 @@ urlpatterns = [
     path("signup/", views.SocialSignupView.as_view(), name='email-signup'),
     path("social-signup/", views.EmailSignupView.as_view(), name='social-signup'),
     path('me/', user_view, name='user-me'),
+    path('search/',views.UserSearchAPIView.as_view(), name='user-search'),
 
 ]
 
