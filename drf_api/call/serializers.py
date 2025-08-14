@@ -7,91 +7,67 @@ User = get_user_model()
 
 
 class CallHistoryListSerializer(serializers.ModelSerializer): #통화 목록
-    #안에 내용이 같으니까 그냥 프로필을 가져와서 하는게 낫다. 
-    call_id = serializers.IntegerField(source="id", read_only=True) 
-    peer = serializers.SerializerMethodField()
+    caller = serializers.SerializerMethodField()
+    receiver = serializers.SerializerMethodField()
+
     class Meta:
         model = CallHistory
-        fields = [
-            "call_id",
-            "peer",
-            "called_at",
-        ]
-    def get_peer(self, obj):
-        user = self.context["request"].user 
-        peer_user = obj.receiver if obj.caller == user else obj.caller 
-        profile = getattr(peer_user, "profile", None)
-        request = self.context.get("request")
+        fields = ["id", "caller", "receiver", "called_at","started_at","ended_at","call_status"]
+    
 
-        img = getattr(profile, "profile_image_url", None)
-        img_url = None
-        if isinstance(img, FieldFile) and img:  
-            img_url = img.url
-        elif isinstance(img, str) and img:               
-            img_url = img
-
-        if img_url and request and img_url.startswith("/"):
-            img_url = request.build_absolute_uri(img_url) 
-
-        return { 
-            "user_id": getattr(peer_user, "id", None),
-            "nickname": getattr(peer_user.profile, "nickname", None),
-            "profile_image_url": img_url,
+    def get_caller(self, obj):
+        return {
+            "id": obj.caller.id,
+            "nickname": obj.caller.profile.nickname,
+            "profile_image_url": obj.caller.profile.profile_image_url.url if obj.caller.profile.profile_image_url else None
         }
+    
+    def get_receiver(self, obj):
+        return {
+            "id": obj.receiver.id,
+            "nickname": obj.receiver.profile.nickname,
+            "profile_image_url": obj.receiver.profile.profile_image_url.url if obj.caller.profile.profile_image_url else None
+        }
+
+
             
 class CallHistoryDetailSerializer(serializers.ModelSerializer): #특정 통화 
     is_caller = serializers.SerializerMethodField()
     direction = serializers.SerializerMethodField()     
-    peer = serializers.SerializerMethodField()
     duration_seconds = serializers.SerializerMethodField()
     used_credits = serializers.SerializerMethodField()
+    caller = serializers.SerializerMethodField()
+    receiver = serializers.SerializerMethodField()
+
     class Meta:
         model = CallHistory
-        fields = [
-            "id",
-            "direction",
-            "peer",
-            "call_status",
-            "called_at",
-            "duration_seconds",
-            "used_credits",
-            "is_caller",
-        ]
+        fields = ["id","direction","caller","receiver","call_status","called_at", "duration_seconds",
+            "used_credits","is_caller","started_at","ended_at",]
         read_only_fields = fields
 
     def _is_caller(self, obj): 
         user = self.context["request"].user
         return obj.caller == user 
     
-
-    def get_is_caller(self, obj):
+    def get_is_caller(self, obj):    #누가 걸었냐 T/F 
         return self._is_caller(obj)
 
     def get_direction(self, obj):
         return "OUTGOING" if self._is_caller(obj) else "INCOMING"
 
-    def get_peer(self, obj):
-            user = self.context["request"].user 
-            peer_user = obj.receiver if obj.caller == user else obj.caller 
-            profile = getattr(peer_user, "profile", None)
-            request = self.context.get("request")
-            
-            img = getattr(profile, "profile_image_url", None)
-            img_url = None
-            if isinstance(img, FieldFile) and img:
-                img_url = img.url
-            elif isinstance(img, str) and img:
-                img_url = img
-
-            if img_url and request and img_url.startswith("/"):
-                img_url = request.build_absolute_uri(img_url)
-
-
-            return {
-                "id": getattr(peer_user, "id", None),
-                "nickname": getattr(peer_user.profile, "nickname", None),
-                "profile_image_url":img_url,
-            }
+    def get_caller(self, obj):
+        return {
+            "id": obj.caller.id,
+            "nickname": obj.caller.profile.nickname,
+            "profile_image_url": obj.caller.profile.profile_image_url.url if obj.caller.profile.profile_image_url else None
+        }
+    
+    def get_receiver(self, obj):
+        return {
+            "id": obj.caller.id,
+            "nickname": obj.caller.profile.nickname,
+            "profile_image_url": obj.receiver.profile.profile_image_url.url if obj.caller.profile.profile_image_url else None
+        }
 
     def get_duration_seconds(self, obj):
         if obj.started_at and obj.ended_at:
