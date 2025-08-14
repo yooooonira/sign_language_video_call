@@ -44,9 +44,10 @@ class FriendListSerializer(serializers.ModelSerializer): # 친구 목록 조회 
 
 class FriendDetailSerializer(FriendListSerializer): # 친구 프로필 조회 
     profile = ProfileSerializer(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True) 
     class Meta:
         model = User
-        fields = ["id", "email", "profile"]
+        fields = ["id", "email", "profile","created_at"]
 
 
 

@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Max,Min, Q
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -49,17 +49,16 @@ class FriendRetrieveDeleteView(generics.RetrieveDestroyAPIView):      #친구 �
     def get_object(self): #조회
         me = self.request.user
         other_id = self.kwargs.get("pk")  
-        # return (  MultipleObjectsReturned
-        # User.objects
-        # .select_related('profile')
-        # .get(id=other_id, friend__users=me)
-        #  )
+
         return(
             User.objects
-            .filter(id=other_id, friend__users=me)  # 나와 친구인 user
+            .filter(id=other_id, friend__users=me)  
             .select_related('profile')
-            .distinct()                              # ← 중복 제거
-            .first()                                 # ← 단일 객체로
+            .annotate(
+                created_at=Min('friend__created_at', filter=Q(friend__users=me))
+            )
+            .distinct()                              
+            .first()                                
         )
 
 
