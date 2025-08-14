@@ -7,6 +7,7 @@ User = get_user_model()
 
 
 class CallHistoryListSerializer(serializers.ModelSerializer): #통화 목록
+    #안에 내용이 같으니까 그냥 프로필을 가져와서 하는게 낫다. 
     call_id = serializers.IntegerField(source="id", read_only=True) 
     peer = serializers.SerializerMethodField()
     class Meta:

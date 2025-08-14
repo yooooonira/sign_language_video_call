@@ -121,10 +121,8 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
         friend = (Friend.objects
                   .filter(users=me)          
                   .filter(users=to_user) 
-                  .annotate(cnt=Count('users', distinct=True))
-                  .filter(cnt=2)
-                  .first()
-        )
+                  .exists()
+                )
         if friend:
             return Response({
                 "outcome": "Already_friends",
@@ -157,13 +155,13 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
                 "outbound_request_id": outbound.id
             }, status=status.HTTP_200_OK)
         
-        isinstance=serializer.save(from_user=me)
+        instance=serializer.save(from_user=me)
 
         out = FriendRequestDetailSerializer(
-            isinstance,
+            instance,
             context=self.get_serializer_context()
             )
-        headers = self.get_success_headers({"id": isinstance.pk})
+        headers = self.get_success_headers({"id": instance.pk})
        
         return Response({
             "outcome":"created",
@@ -189,7 +187,7 @@ class FriendRequestAcceptView(APIView): #친구 수락
         other = fr.from_user
 
         # 이미 친구인지 다시 한 번 체크(동시성)
-        exists = (Friend.objects.filter(users=me).filter(users=other).annotate(cnt=Count('users')).filter(cnt=2).exists())
+        exists = (Friend.objects.filter(users=me).filter(users=other).exists())
         if not exists:
             # 없을 때만 새로 만들고 두 명 추가
             f = Friend.objects.create()
