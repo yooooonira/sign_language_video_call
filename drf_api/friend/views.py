@@ -118,29 +118,36 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
             }, status=status.HTTP_200_OK)
 
         # 이미 친구 
-        friend = (Friend.objects
-                  .filter(users=me)          
-                  .filter(users=to_user) 
-                  .exists()
-                )
-        if friend:
+        friend_id = (Friend.objects
+                    .filter(users=me)
+                    .filter(users=to_user)
+                    .values_list('id', flat=True)
+                    .first())
+        if friend_id:
             return Response({
-                "outcome": "Already_friends",
-                "state": "friends",
-                "friend_id": friend.id
+                "outcome": "ALREADY_FRIENDS",
+                "state": "FRIENDS",
+                "friend_id": friend_id
             }, status=status.HTTP_200_OK)
 
         # 상대가 이미 친구 보낸 상태 
         inbound = (FriendRelations.objects
-                   .filter(from_user=to_user, to_user=me, status="PENDING")
-                   .first()
-                   )
+            .filter(from_user=to_user, to_user=me, status="PENDING")
+            .select_for_update()
+            .first())
         if inbound:
+            # 바로 친구 생성
+            a, b = sorted([me.id, to_user.id])
+            pair_key = f"{a}:{b}"
+            f, _ = Friend.objects.get_or_create(pair_key=pair_key)
+            f.users.add(me, to_user)
+
+            inbound.delete()  # PENDING 제거
+
             return Response({
-                "outcome":"Already_inbound",
-                "state":"PENDING_inbound",
-                "inbound_request_id": inbound.id,
-                "message":"상대방이 이미 친구 요청을 보냈어요. 수락/거절하세요."
+                "outcome": "NOW_FRIENDS",
+                "state": "FRIENDS",
+                "friend_id": f.id
             }, status=status.HTTP_200_OK)
         
         # 내가 이미 친구 보낸 상태
@@ -186,16 +193,17 @@ class FriendRequestAcceptView(APIView): #친구 수락
         me = fr.to_user
         other = fr.from_user
 
-        # 이미 친구인지 다시 한 번 체크(동시성)
-        exists = (Friend.objects.filter(users=me).filter(users=other).exists())
-        if not exists:
-            # 없을 때만 새로 만들고 두 명 추가
-            f = Friend.objects.create()
-            f.users.add(me, other)
+        a, b = sorted([me.id, other.id])
+        pair_key = f"{a}:{b}"
 
-        fr.status = 'ACCEPTED'
-        fr.save(update_fields=['status'])
+        # 같은 pair_key로 하나만 존재하도록
+        f, _ = Friend.objects.get_or_create(pair_key=pair_key)
+        f.users.add(me, other)  # 중복 add 안전
+
+        fr.delete()
+
         return Response({"message": "친구 수락 완료"}, status=200)
+
 
 class FriendRequestRejectView(APIView):  #친구 거절
     permission_classes = [AuthOnly]
