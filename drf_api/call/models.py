@@ -1,5 +1,9 @@
 from django.db import models
 from django.conf import settings
+import uuid
+
+def gen_room_id():
+     return uuid.uuid4().hex[:22]
 class CallHistory(models.Model):
     CALL_STATUS_CHOICES = [
             ('ACCEPTED', '수락됨'),
@@ -14,3 +18,5 @@ class CallHistory(models.Model):
 
     call_status = models.CharField(max_length=10, choices=CALL_STATUS_CHOICES)
     called_at   = models.DateTimeField(auto_now_add=True)
+
+    room_id = models.CharField(max_length=22,unique=True, default=gen_room_id)
