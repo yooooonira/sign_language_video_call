@@ -59,14 +59,14 @@ class CallHistoryDetailSerializer(serializers.ModelSerializer): #특정 통화
         return {
             "id": obj.caller.id,
             "nickname": obj.caller.profile.nickname,
-            "profile_image_url": obj.obj.caller.profile.profile_image_url if obj.caller.profile.profile_image_url else None
+            "profile_image_url": obj.caller.profile.profile_image_url.url if obj.caller.profile.profile_image_url else None
         }
 
     def get_receiver(self, obj):
         return {
             "id": obj.receiver.id,
             "nickname": obj.receiver.profile.nickname,
-            "profile_image_url":  obj.receiver.profile.profile_image_url if obj.receiver.profile.profile_image_url else None
+            "profile_image_url":  obj.receiver.profile.profile_image_url.url if obj.receiver.profile.profile_image_url else None
         }
 
     def get_duration_seconds(self, obj):
