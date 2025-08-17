@@ -7,8 +7,7 @@ from core.views import SupabaseJWTAuthentication
 from rest_framework import status
 from user.models import Profile,User
 from credit.models import Credits
-from .serializers import ProfileSerializer,UserSerializer
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from .serializers import ProfileSerializer,UserSerializer, UserSearchSerializer
 from rest_framework.exceptions import ValidationError
 
 # 소셜 로그인/회원가입(profile)
@@ -25,12 +24,9 @@ class SocialSignupView(APIView):
         profile_exists = Profile.objects.filter(user=user).exists()
 
         if profile_exists:
-            # 이미 프로필 있으면 => 기존 유저 (로그인 상태)
             return Response({"message": "User already exists."}, status=status.HTTP_200_OK)
-        # nickname = none 일경우
         if not nickname:
             nickname = generate_unique_username()
-        # nickname이 중복인경우
 
         if Profile.objects.filter(nickname=nickname).exists():
             nickname = generate_unique_username()
@@ -107,7 +103,7 @@ class UserViewSet(viewsets.ViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class UserSearchAPIView(generics.ListAPIView):
-    serializer_class = UserSerializer
+    serializer_class = UserSearchSerializer
 
     def get_queryset(self):
         query = self.request.GET.get('q', '')
@@ -116,3 +112,9 @@ class UserSearchAPIView(generics.ListAPIView):
                 profile__nickname__icontains=query
             ).select_related('profile')
         return User.objects.none()
+
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
