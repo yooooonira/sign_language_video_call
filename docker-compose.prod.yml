@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     env_file: 
-      - .env
+      - drf_api/.env
     volumes:
       - static-data:/vol/web 
     environment:
