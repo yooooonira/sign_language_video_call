@@ -12,6 +12,8 @@ import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
+from call import routing as call_routing
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'drf_api.settings')
 
@@ -19,7 +21,7 @@ application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            call.routing.websocket_urlpatterns
+            call_routing.websocket_urlpatterns
         )
     ),
 })
