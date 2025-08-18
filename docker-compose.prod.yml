@@ -3,11 +3,11 @@ version: "3.9"
 services:
   app:
     build:
-      context: .
-      dockerfile: drf_api/Dockerfile
+      context: ./drf_api
+      dockerfile: Dockerfile
     restart: always
-    env_file:
-      - drf_api/.env
+    env_file: 
+      - .env
     volumes:
       - static-data:/vol/web 
     environment:
