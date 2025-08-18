@@ -1,17 +1,34 @@
-Django>5.0,<5.2
-# 파이썬은 3.13 고정
-# 사용가능한버전 : 3.10, 3.11, 3.12, 3.13
+# Django
+Django>=5.0,<5.2
+
+# Python 3.13 호환 패키지
 djangorestframework==3.15.0,<3.15.2
 django-cleanup==9.0.0
 python-dotenv>=1.0.0,<2.0.0
 drf-spectacular>=0.26.5,<0.27.0
 
+# DB
 psycopg2>=2.9.9,<2.10.0
+
+# Auth / JWT
 PyJWT>=2.8.0,<2.9.0
 
+# Image
 pillow>=11.0.0,<11.1.0
-uwsgi>=2.0.22,<2.1.0
+
+# HTTP
 requests>=2.28.0,<3.0.0
+
+# CORS
 django-cors-headers>=3.13.0,<4.0.0
-psycopg2>=2.9.9,<2.10.0
-drf-spectacular
+
+# Channels / WebSocket
+channels==4.3.0
+channels-redis==4.1.0
+
+# uwsgi는 제거 → WebSocket 사용 시 gunicorn+uvicorn-worker로 대체
+# uwsgi>=2.0.22,<2.1.
+
+# ASGI / Production 서버
+gunicorn>=21.0.0,<22.0.0
+uvicorn>=0.23.0,<0.24.0

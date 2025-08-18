@@ -28,11 +28,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV PATH="/scripts:/py/bin:$PATH"
 
-# RUN adduser --disabled-password --gecos "" django-user \
-#     && chmod -R +x /scripts \
-#     && mkdir -p /vol/web/media /vol/web/static \
-#     && chown -R django-user:django-user /app /vol
-
 RUN adduser --disabled-password --gecos "" django-user && \
     mkdir -p /vol/web/media /vol/web/static && \
     chown -R django-user:django-user /vol /scripts && \

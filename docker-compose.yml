@@ -24,6 +24,8 @@ services:
       - DEBUG=1
     depends_on:
       - db
+      - redis
+
   db:
     image: postgres:15
     volumes:
@@ -35,5 +37,11 @@ services:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
       # - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
 volumes:
   dev-db-data:

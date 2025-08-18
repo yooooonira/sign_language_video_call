@@ -68,6 +68,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],   # docker-compose 서비스 이름
+
+        },
+    },
+}
+
+
 ROOT_URLCONF = 'drf_api.urls'
 
 TEMPLATES = [
@@ -85,7 +96,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'drf_api.wsgi.application'
+# WSGI_APPLICATION = 'drf_api.wsgi.application'
+ASGI_APPLICATION = "drf_api.asgi.application"
 
 
 # Database
@@ -160,7 +172,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "core.views.SupabaseJWTAuthentication", 
+        "core.views.SupabaseJWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
