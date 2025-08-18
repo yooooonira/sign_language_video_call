@@ -20,12 +20,9 @@ services:
     restart: always
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASS}
+    
     env_file:
-        - drf_api/.env   # DB_NAME, DB_USER, DB_PASS 그대로 사용
+      - drf_api/.env   # DB_NAME, DB_USER, DB_PASS 그대로 사용
 
 volumes:
   postgres-data:
