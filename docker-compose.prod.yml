@@ -9,7 +9,7 @@ services:
       - "8000:8000"
     restart: always
     env_file:
-      - drf_api/.env # 여기서 전부 읽어옴
+      - drf_api/.env
     volumes:
       - /home/ec2-user/sign_language_video_call/static:/vol/web/static
       - /home/ec2-user/sign_language_video_call/media:/vol/web/media
