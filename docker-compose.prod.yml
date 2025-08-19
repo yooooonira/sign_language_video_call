@@ -11,8 +11,8 @@ services:
     env_file:
       - drf_api/.env # 여기서 전부 읽어옴
     volumes:
-      - /home/ec2-user/sign_language_video_call/static:/vol/web/static
-      - /home/ec2-user/sign_language_video_call/media:/vol/web/media
+      - /home/ec2-user/sign_language_video_call/static/static:/vol/web/static
+      - /home/ec2-user/sign_language_video_call/static/media:/vol/web/media
 
     environment:
       - DJANGO_SETTINGS_MODULE=drf_api.settings # 고정값만 남김
