@@ -15,13 +15,13 @@ User = get_user_model()
 class AuthOnly(permissions.IsAuthenticated): # 로그인 한 사용자만 사용 가능
     pass
 
-class FriendListView(generics.ListAPIView): #친구 목록 조회 
+class FriendListView(generics.ListAPIView): #친구 목록 조회
     permission_classes = [AuthOnly]
     serializer_class = FriendListSerializer
     pagination_class = DefaultPagination
 
     def get_queryset(self):
-        me = self.request.user   #me : 현재 요청자 
+        me = self.request.user   #me : 현재 요청자
 
         return (
             User.objects
@@ -43,26 +43,26 @@ class FriendListView(generics.ListAPIView): #친구 목록 조회
 
 class FriendRetrieveDeleteView(generics.RetrieveDestroyAPIView):      #친구 프로필 조회, 친구 삭제
     permission_classes = [AuthOnly]
-    serializer_class = FriendDetailSerializer 
-    
+    serializer_class = FriendDetailSerializer
+
 
     def get_object(self): #조회
         me = self.request.user
-        other_id = self.kwargs.get("pk")  
+        other_id = self.kwargs.get("pk")
 
         return(
             User.objects
-            .filter(id=other_id, friend__users=me)  
+            .filter(id=other_id, friend__users=me)
             .select_related('profile')
             .annotate(
                 created_at=Min('friend__created_at', filter=Q(friend__users=me))
             )
-            .distinct()                              
-            .first()                                
+            .distinct()
+            .first()
         )
 
 
-        
+
 
     def destroy(self, request, *args, **kwargs):
         me = request.user
@@ -74,18 +74,23 @@ class FriendRetrieveDeleteView(generics.RetrieveDestroyAPIView):      #친구 �
 
 
 
-class ReceivedRequestListView(generics.ListAPIView): #친추 받은 목록 조회 
+class ReceivedRequestListView(generics.ListAPIView): #친추 받은 목록 조회
     permission_classes = [AuthOnly]
     serializer_class = ReceivedRequestSerializer
     pagination_class = DefaultPagination
 
     def get_queryset(self):
-        return (FriendRelations.objects     #friendrelation (친구관계)모델에서 
-                .filter(to_user=self.request.user, status='PENDING') #수신자가 나일때 status가 pending이면 
+        return (FriendRelations.objects     #friendrelation (친구관계)모델에서
+                .filter(to_user=self.request.user, status='PENDING') #수신자가 나일때 status가 pending이면
                 .select_related('from_user__profile') #발송자에 대한 정보를 가져와
                 .order_by("-id"))
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
 
-class SentRequestListView(generics.ListAPIView): #친추 보낸 목록 조회 
+
+class SentRequestListView(generics.ListAPIView): #친추 보낸 목록 조회
     permission_classes = [AuthOnly]
     serializer_class = SentRequestSerializer
     pagination_class = DefaultPagination
@@ -96,10 +101,15 @@ class SentRequestListView(generics.ListAPIView): #친추 보낸 목록 조회
                 .select_related('to_user__profile')
                 .order_by("-id") )
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
+
 
 class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
     permission_classes = [AuthOnly]
-    serializer_class = FriendRequestCreateSerializer 
+    serializer_class = FriendRequestCreateSerializer
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -117,7 +127,7 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
                 "message": "자기 자신에게는 친구 요청을 보낼 수 없습니다."
             }, status=status.HTTP_200_OK)
 
-        # 이미 친구 
+        # 이미 친구
         friend_id = (Friend.objects
                     .filter(users=me)
                     .filter(users=to_user)
@@ -130,7 +140,7 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
                 "friend_id": friend_id
             }, status=status.HTTP_200_OK)
 
-        # 상대가 이미 친구 보낸 상태 
+        # 상대가 이미 친구 보낸 상태
         inbound = (FriendRelations.objects
             .filter(from_user=to_user, to_user=me, status="PENDING")
             .select_for_update()
@@ -149,7 +159,7 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
                 "state": "FRIENDS",
                 "friend_id": f.id
             }, status=status.HTTP_200_OK)
-        
+
         # 내가 이미 친구 보낸 상태
         outbound = (FriendRelations.objects
             .filter(from_user=me, to_user=to_user, status="PENDING")
@@ -161,7 +171,7 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
                 "state":"PENDING_outbound",
                 "outbound_request_id": outbound.id
             }, status=status.HTTP_200_OK)
-        
+
         instance=serializer.save(from_user=me)
 
         out = FriendRequestDetailSerializer(
@@ -169,14 +179,14 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
             context=self.get_serializer_context()
             )
         headers = self.get_success_headers({"id": instance.pk})
-       
+
         return Response({
             "outcome":"created",
             "state":"PENDING_outbound",
             "request": out.data
         }, status=status.HTTP_201_CREATED, headers=headers)
-        
-    
+
+
 
 
 class FriendRequestAcceptView(APIView): #친구 수락
@@ -217,7 +227,7 @@ class FriendRequestRejectView(APIView):  #친구 거절
         return Response({"message": "친구 요청 거절됨"}, status=200)
 
 
-class FriendRequestDestroyView(generics.DestroyAPIView): # 친구 요청 취소 
+class FriendRequestDestroyView(generics.DestroyAPIView): # 친구 요청 취소
     permission_classes = [AuthOnly]
     queryset = FriendRelations.objects.all()  # 안전하게 get_object에서 필터링
 
