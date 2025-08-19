@@ -52,14 +52,14 @@ class FriendDetailSerializer(FriendListSerializer): # 친구 프로필 조회
 
 
 class ReceivedRequestSerializer(serializers.ModelSerializer): #친추 받은 목록
-    from_user = UserSimpleSerializer(read_only=True)
+    from_user = ProfileSerializer(read_only=True)
 
     class Meta:
         model = FriendRelations
         fields = ["id", "from_user", "status"]
 
 class SentRequestSerializer(serializers.ModelSerializer): #친추 보낸 목록
-    to_user = UserSimpleSerializer(read_only=True)
+    to_user = ProfileSerializer(read_only=True)
 
     class Meta:
         model = FriendRelations
