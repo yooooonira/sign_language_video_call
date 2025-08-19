@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from django.views.decorators.csrf import csrf_exempt
 class PublicSchemaView(SpectacularAPIView):
     authentication_classes = []
 
@@ -12,6 +13,8 @@ class PublicSwaggerView(SpectacularSwaggerView):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("admin/login/", csrf_exempt(site.login)),
+
     path("api/users/", include("user.urls")),
     path("api/credits/", include("credit.urls")),
     path("api/payments/", include("payment.urls")),
