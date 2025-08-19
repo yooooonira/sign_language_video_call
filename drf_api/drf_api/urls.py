@@ -5,7 +5,6 @@ from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.admin import site
-from .views import jwt_admin_login
 
 class PublicSchemaView(SpectacularAPIView):
     authentication_classes = []
@@ -16,9 +15,6 @@ class PublicSwaggerView(SpectacularSwaggerView):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("admin/login/", jwt_admin_login, name="jwt_admin_login"),  # 커스텀 로그인 뷰 연결
-
-
     path("api/users/", include("user.urls")),
     path("api/credits/", include("credit.urls")),
     path("api/payments/", include("payment.urls")),
