@@ -13,12 +13,7 @@ from core.views import SupabaseJWTAuthentication
 
 User = get_user_model()
 
-class AuthOnly(permissions.IsAuthenticated): # 로그인 한 사용자만 사용 가능
-    pass
-
 class FriendListView(generics.ListAPIView): #친구 목록 조회
-    permission_classes = [AuthOnly]
-    authentication_classes = [SupabaseJWTAuthentication]
 
     serializer_class = FriendListSerializer
     pagination_class = DefaultPagination
@@ -45,9 +40,6 @@ class FriendListView(generics.ListAPIView): #친구 목록 조회
 
 
 class FriendRetrieveDeleteView(generics.RetrieveDestroyAPIView):      #친구 프로필 조회, 친구 삭제
-    permission_classes = [AuthOnly]
-    authentication_classes = [SupabaseJWTAuthentication]
-
     serializer_class = FriendDetailSerializer
 
 
@@ -80,8 +72,6 @@ class FriendRetrieveDeleteView(generics.RetrieveDestroyAPIView):      #친구 �
 
 
 class ReceivedRequestListView(generics.ListAPIView): #친추 받은 목록 조회
-    permission_classes = [AuthOnly]
-    authentication_classes = [SupabaseJWTAuthentication]
     serializer_class = ReceivedRequestSerializer
     pagination_class = DefaultPagination
 
@@ -97,8 +87,6 @@ class ReceivedRequestListView(generics.ListAPIView): #친추 받은 목록 조�
 
 
 class SentRequestListView(generics.ListAPIView): #친추 보낸 목록 조회
-    permission_classes = [AuthOnly]
-    authentication_classes = [SupabaseJWTAuthentication]
     serializer_class = SentRequestSerializer
     pagination_class = DefaultPagination
 
@@ -115,9 +103,6 @@ class SentRequestListView(generics.ListAPIView): #친추 보낸 목록 조회
 
 
 class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
-    permission_classes = [AuthOnly]
-    authentication_classes = [SupabaseJWTAuthentication]
-
     serializer_class = FriendRequestCreateSerializer
 
     @transaction.atomic
@@ -199,9 +184,6 @@ class FriendRequestCreateView(generics.CreateAPIView): #친구 추가
 
 
 class FriendRequestAcceptView(APIView): #친구 수락
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [AuthOnly]
-
     @transaction.atomic
     def post(self, request, pk):
         # 요청 행을 락으로 묶어 중복 생성 방지
@@ -226,9 +208,6 @@ class FriendRequestAcceptView(APIView): #친구 수락
 
 
 class FriendRequestRejectView(APIView):  #친구 거절
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [AuthOnly]
-
     def post(self, request, pk):
         updated = (FriendRelations.objects
                    .filter(id=pk, to_user=request.user, status='PENDING')
@@ -239,8 +218,6 @@ class FriendRequestRejectView(APIView):  #친구 거절
 
 
 class FriendRequestDestroyView(generics.DestroyAPIView): # 친구 요청 취소
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [AuthOnly]
     queryset = FriendRelations.objects.all()  # 안전하게 get_object에서 필터링
 
     def get_object(self):

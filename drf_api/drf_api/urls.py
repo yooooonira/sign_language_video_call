@@ -27,9 +27,6 @@ urlpatterns = [
     path('api/docs/', PublicSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
 
 ]
-urlpatterns += [
-    path("debug-host/", debug_host),
-]
 
 
 if settings.DEBUG:

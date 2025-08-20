@@ -12,9 +12,6 @@ from rest_framework.exceptions import ValidationError
 
 # 소셜 로그인/회원가입(profile)
 class SocialSignupView(APIView):
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
     def post(self, request):
         user = request.user
         nickname = getattr(user, "nickname", None)
@@ -39,8 +36,6 @@ class SocialSignupView(APIView):
 
 # 이메일 회원가입(profile)
 class EmailSignupView(APIView):
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [AllowAny]
 
     def post(self, request):
         user = request.user
@@ -69,9 +64,6 @@ class EmailSignupView(APIView):
 
 # user 조회 / 수정 / 탈퇴
 class UserViewSet(viewsets.ViewSet):
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
     def retrieve(self, request):
         user = request.user
         serializer = UserSerializer(user,context={"request":request})

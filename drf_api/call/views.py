@@ -14,13 +14,7 @@ from django.contrib.auth import get_user_model
 from core.views import SupabaseJWTAuthentication
 
 User = get_user_model()
-
-class AuthOnly(permissions.IsAuthenticated): # 로그인 한 사용자만 사용 가능
-    pass
-
 class CallHistoryListView(generics.ListAPIView): #통화 기록 목록 조회 get
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [AuthOnly]
     pagination_class = DefaultPagination
     serializer_class = CallHistoryListSerializer
 
@@ -39,8 +33,6 @@ class CallHistoryListView(generics.ListAPIView): #통화 기록 목록 조회 ge
 
 
 class CallHistoryDetailView(generics.RetrieveDestroyAPIView): #특정 기록 조회get 삭제delete
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [AuthOnly]
     serializer_class = CallHistoryDetailSerializer
 
     def get_queryset(self):
@@ -53,8 +45,6 @@ class CallHistoryDetailView(generics.RetrieveDestroyAPIView): #특정 기록 조
 
 
 class CallHistoryRecordView(generics.CreateAPIView): #통화 정보 기록 post
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [AuthOnly]
     serializer_class = CallHistoryRecordSerializer
 
     def perform_create(self, serializer):
@@ -64,8 +54,6 @@ class CallHistoryRecordView(generics.CreateAPIView): #통화 정보 기록 post
         serializer.save()  # caller는 serializer.create에서 request.user로 강제
 
 class CallRequestView(APIView): #프런트용 room_id 전달
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [AuthOnly]
     def post(self, request):
         rid = request.data.get("receiver_id")
         return Response({

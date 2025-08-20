@@ -8,9 +8,6 @@ import requests
 
 
 class CreditDetailView(APIView):
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
     def get(self, request):
         try:
             credit = Credits.objects.get(user=request.user)

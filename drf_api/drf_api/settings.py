@@ -27,6 +27,8 @@ FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL')
 BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL')
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
 TOSS_SECRET_KEY = os.environ.get('TOSS_SECRET_KEY')
+
+# 접속 허용 도메인
 ALLOWED_HOSTS = []
 ALLOWED_HOSTS.extend(
     filter(
@@ -34,17 +36,22 @@ ALLOWED_HOSTS.extend(
         os.environ.get('DJANGO_ALLOWED_HOSTS','').split(',')
     )
 )
+# 프론트엔드에서 API 호출 허용 도메인.
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 
+# CSRF 보호를 허용할 도메인
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
 ]
 if BACKEND_BASE_URL:
     CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
 
+# 리버스 프록시 환경에서 HTTPS를 인식하도록 설정.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# HTTPS 환경에서만 CSRF 쿠키 전송
 CSRF_COOKIE_SECURE = True
 
 INSTALLED_APPS = [
@@ -169,11 +176,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 AUTH_USER_MODEL = "user.User"
 
-
+# 브라우저에서 정적 파일에 접근할 때 사용하는 URL 경로
 STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
-
+# 서버에서 실제 파일이 저장된 경로
 STATIC_ROOT = '/vol/web/static'
+
+MEDIA_URL = '/media/'
 MEDIA_ROOT = '/vol/web/media'
 
 # Default primary key field type
@@ -181,14 +189,16 @@ MEDIA_ROOT = '/vol/web/media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# DRF의 전역설정 (미설정시 여기서 설정한 값으로 사용)
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    # "DEFAULT_AUTHENTICATION_CLASSES": [
-    #     "core.views.SupabaseJWTAuthentication",
-    # ],
-    # "DEFAULT_PERMISSION_CLASSES": [
-    #     "rest_framework.permissions.IsAuthenticated",
-    # ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "core.views.SupabaseJWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
 }
 
 SPECTACULAR_SETTINGS = {

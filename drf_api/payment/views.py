@@ -17,9 +17,6 @@ import json
 
 # 결제 주문 생성
 class PaymentPrepareView(APIView):
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
     def post(self, request):
         try:
             price = int(request.data["price"])
@@ -35,8 +32,6 @@ class PaymentPrepareView(APIView):
         return Response({"order_id": payment.order_id, "amount": payment.amount}, status=201)
 
 class ConfirmPaymentView(APIView):
-    authentication_classes = [SupabaseJWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         secret_key = settings.TOSS_SECRET_KEY
