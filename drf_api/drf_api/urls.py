@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.admin import site
+from core.views import debug_host
 
 class PublicSchemaView(SpectacularAPIView):
     authentication_classes = []
@@ -25,6 +26,8 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('api/schema/', PublicSchemaView.as_view(), name='api-schema'),
     path('api/docs/', PublicSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
+    path('debug-host/', debug_host),
+
 ]
 
 
