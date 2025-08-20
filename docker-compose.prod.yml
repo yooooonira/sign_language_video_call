@@ -8,13 +8,16 @@ services:
     ports:
       - "8000:8000"
     restart: always
+    # 컨테이너 시작 시 자동으로 읽음(비밀번호, API키 등)
     env_file:
       - drf_api/.env
+    # 런타임 환경변수로 바로 주입, 단일 또는 고정 값 설정에 편리(DJANGO_SETTINGS_MODULE 등)
+    environment:
+      - DJANGO_SETTINGS_MODULE=drf_api.settings
     volumes:
       - /home/ec2-user/sign_language_video_call/static:/vol/web/static
       - /home/ec2-user/sign_language_video_call/media:/vol/web/media
-    environment:
-      - DJANGO_SETTINGS_MODULE=drf_api.settings # 고정값만 남김
+
     depends_on:
       - db
 
@@ -25,7 +28,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
 
     env_file:
-      - drf_api/.env # DB_NAME, DB_USER, DB_PASS 그대로 사용
+      - drf_api/.env
 
 volumes:
   postgres-data:

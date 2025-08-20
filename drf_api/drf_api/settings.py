@@ -25,8 +25,8 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY','changeme')
 SUPABASE_JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET')
 FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL')
 BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL')
-DEBUG = bool(int(os.environ.get('DEBUG', 0)))
 TOSS_SECRET_KEY = os.environ.get('TOSS_SECRET_KEY')
+DEBUG = bool(int(os.environ.get('DEBUG', 0)))
 
 # 접속 허용 도메인
 ALLOWED_HOSTS = []
