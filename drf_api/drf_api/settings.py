@@ -38,7 +38,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 
-CSRF_TRUSTED_ORIGINS = [ "5range.site","www.5range.site" ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://5range.site",
+    "https://www.5range.site",
+]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_COOKIE_SECURE = True
 
