@@ -39,9 +39,11 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://5range.site",
-    "https://www.5range.site",
+    "http://localhost:5173",
 ]
+if BACKEND_BASE_URL:
+    CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_COOKIE_SECURE = True
 
