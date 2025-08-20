@@ -25,8 +25,10 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('api/schema/', PublicSchemaView.as_view(), name='api-schema'),
     path('api/docs/', PublicSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
-    path('debug-host/', debug_host),
 
+]
+urlpatterns += [
+    path("debug-host/", debug_host),
 ]
 
 
