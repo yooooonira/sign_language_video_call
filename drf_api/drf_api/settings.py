@@ -20,7 +20,7 @@ load_dotenv(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY','changeme')
 SUPABASE_JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET')
 FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL')
@@ -37,12 +37,12 @@ ALLOWED_HOSTS.extend(
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
-# CSRF_TRUSTED_ORIGINS = [
-#     "http://localhost:5173",
-# ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+]
 if FRONTEND_BASE_URL:
     CORS_ALLOWED_ORIGINS.append(FRONTEND_BASE_URL)
-    #CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
+    CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
 
 INSTALLED_APPS = [
     "core",
