@@ -37,12 +37,12 @@ ALLOWED_HOSTS.extend(
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://localhost:5173",
+# ]
 if FRONTEND_BASE_URL:
     CORS_ALLOWED_ORIGINS.append(FRONTEND_BASE_URL)
-    CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
+    #CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
 
 INSTALLED_APPS = [
     "core",
