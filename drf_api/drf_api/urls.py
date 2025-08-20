@@ -3,9 +3,6 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.admin import site
-from core.views import debug_host
 
 class PublicSchemaView(SpectacularAPIView):
     authentication_classes = []
@@ -28,7 +25,7 @@ urlpatterns = [
 
 ]
 
-
+# 개발 모드(DEBUG=True)에서 Django가 직접 업로드된 미디어 파일을 서빙하게 함
 if settings.DEBUG:
     urlpatterns += static(
         settings.MEDIA_URL,

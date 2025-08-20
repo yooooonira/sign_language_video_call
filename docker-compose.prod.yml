@@ -13,7 +13,6 @@ services:
     volumes:
       - /home/ec2-user/sign_language_video_call/static:/vol/web/static
       - /home/ec2-user/sign_language_video_call/media:/vol/web/media
-
     environment:
       - DJANGO_SETTINGS_MODULE=drf_api.settings # 고정값만 남김
     depends_on:

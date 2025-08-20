@@ -1,9 +1,7 @@
-from rest_framework import generics, permissions,status,viewsets
+from rest_framework import generics,status,viewsets
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from core.utils.generate_name import generate_unique_username
-from core.views import SupabaseJWTAuthentication
 from rest_framework import status
 from user.models import Profile,User
 from credit.models import Credits

@@ -3,17 +3,14 @@ from rest_framework.views import APIView
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from .models import PaymentTransaction
-from core.views import SupabaseJWTAuthentication
 from core.utils.generate_order_id import generate_order_id
 import base64
 import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.conf import settings
-from django.http import JsonResponse,HttpResponseBadRequest
 from credit.models import Credits
 from django.utils import timezone
-import json
 
 # 결제 주문 생성
 class PaymentPrepareView(APIView):
