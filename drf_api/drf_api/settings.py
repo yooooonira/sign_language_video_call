@@ -37,12 +37,10 @@ ALLOWED_HOSTS.extend(
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-]
-if FRONTEND_BASE_URL:
-    CORS_ALLOWED_ORIGINS.append(FRONTEND_BASE_URL)
-    CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
+
+CSRF_TRUSTED_ORIGINS = [ "5range.site","www.5range.site" ]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_COOKIE_SECURE = True
 
 INSTALLED_APPS = [
     "core",

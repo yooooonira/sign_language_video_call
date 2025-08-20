@@ -10,7 +10,6 @@ from core.views import debug_host
 class PublicSchemaView(SpectacularAPIView):
     authentication_classes = []
 
-
 class PublicSwaggerView(SpectacularSwaggerView):
     authentication_classes = []
 
