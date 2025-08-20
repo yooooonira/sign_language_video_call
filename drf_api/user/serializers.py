@@ -7,6 +7,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['nickname', 'profile_image_url', 'created_at']
+
     def validate_nickname(self, value):
         user = self.context['request'].user
         if Profile.objects.filter(nickname=value).exclude(user=user).exists():
@@ -22,8 +23,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserSearchSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(read_only=True)
-
-
     is_friend = serializers.SerializerMethodField()
     friend_request_status = serializers.SerializerMethodField()
 

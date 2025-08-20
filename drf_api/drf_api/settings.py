@@ -24,6 +24,7 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY','changeme')
 SUPABASE_JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET')
 FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL')
+BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL')
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
 TOSS_SECRET_KEY = os.environ.get('TOSS_SECRET_KEY')
 ALLOWED_HOSTS = []
@@ -41,7 +42,7 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 if FRONTEND_BASE_URL:
     CORS_ALLOWED_ORIGINS.append(FRONTEND_BASE_URL)
-    CSRF_TRUSTED_ORIGINS.append(FRONTEND_BASE_URL)
+    CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
 
 INSTALLED_APPS = [
     "core",
