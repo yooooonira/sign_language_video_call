@@ -29,3 +29,9 @@ class SupabaseJWTAuthentication(BaseAuthentication):
 
         return (user, None)
 
+from django.http import HttpResponse
+
+def debug_host(request):
+    print("request.get_host():", request.get_host())
+    print("request.META['HTTP_X_FORWARDED_PROTO']:", request.META.get("HTTP_X_FORWARDED_PROTO"))
+    return HttpResponse("Check your console/logs")
