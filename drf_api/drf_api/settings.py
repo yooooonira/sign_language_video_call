@@ -34,21 +34,16 @@ ALLOWED_HOSTS.extend(
         os.environ.get('DJANGO_ALLOWED_HOSTS','').split(',')
     )
 )
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "https://sign-language-video-call-frontend.vercel.app",
-    "https://5range.site",
-    "https://www.5range.site",
-]
-
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://sign-language-video-call-frontend.vercel.app",
 ]
-# if FRONTEND_BASE_URL:
-#     CORS_ALLOWED_ORIGINS.append(FRONTEND_BASE_URL)
-#     CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
-#     CSRF_TRUSTED_ORIGINS.append(FRONTEND_BASE_URL)
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://localhost:5173",
+# ]
+if FRONTEND_BASE_URL:
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_BASE_URL)
+    # CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
+    # CSRF_TRUSTED_ORIGINS.append(FRONTEND_BASE_URL)
 
 INSTALLED_APPS = [
     "core",
