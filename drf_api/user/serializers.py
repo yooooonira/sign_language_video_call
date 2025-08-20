@@ -1,7 +1,7 @@
-from rest_framework.serializers import ModelSerializer, CharField, EmailField
-from .models import User,Profile
+from .models import User, Profile
 from friend.models import Friend, FriendRelations
 from rest_framework import serializers
+
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -14,11 +14,13 @@ class ProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("이미 사용 중인 닉네임입니다.")
         return value
 
+
 class UserSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(read_only=True)
+
     class Meta:
         model = User
-        fields = ["id", "email", "profile","is_staff","is_active"]
+        fields = ["id", "email", "profile", "is_staff", "is_active"]
 
 
 class UserSearchSerializer(serializers.ModelSerializer):

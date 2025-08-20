@@ -15,7 +15,7 @@ def profile_image_file_path(instance, filename):
 
 
 class UserManager(BaseUserManager):
-    #사용자 생성 매니저
+    # 사용자 생성 매니저
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("이메일은 필수입니다.")
@@ -34,8 +34,10 @@ class UserManager(BaseUserManager):
         user.is_superuser = True
         user.save(using=self._db)
         return user
+
+
 class User(AbstractBaseUser, PermissionsMixin):
-    #사용자 모델
+    # 사용자 모델
     email = models.EmailField(max_length=255, unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -48,7 +50,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Profile(models.Model):
-    #프로필 모델
+
+    # 프로필 모델
     user = models.OneToOneField(
             User,
             on_delete=models.CASCADE,
@@ -57,5 +60,6 @@ class Profile(models.Model):
     nickname = models.CharField(max_length=50, unique=True, null=True)
     profile_image_url = models.ImageField(null=True, blank=True, upload_to=profile_image_file_path)
     created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
         return self.nickname or f"Profile of {self.user.email}"

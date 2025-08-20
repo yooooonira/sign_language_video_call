@@ -4,11 +4,14 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+
 class PublicSchemaView(SpectacularAPIView):
     authentication_classes = []
 
+
 class PublicSwaggerView(SpectacularSwaggerView):
     authentication_classes = []
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),

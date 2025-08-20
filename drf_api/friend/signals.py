@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from django.db.models import Count
 from .models import FriendRelations, Friend
 
+
 @receiver(post_save, sender=FriendRelations)
 def ensure_friend_on_accept(sender, instance, **kwargs):
     if instance.status != 'ACCEPTED':

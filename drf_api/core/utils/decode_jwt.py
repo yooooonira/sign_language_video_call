@@ -12,11 +12,11 @@ def verify_supabase_jwt(token):
             leeway=10
         )
         nickname = decoded.get("user_metadata").get('user_name')
-        if nickname==None:
-          nickname = decoded.get('sub')
+        if nickname is None:
+            nickname = decoded.get('sub')
 
         return {
-            "nickname":nickname,
+            "nickname": nickname,
             "email": decoded.get("email"),
         }
     except jwt.PyJWTError as e:

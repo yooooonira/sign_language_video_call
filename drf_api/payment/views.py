@@ -1,16 +1,14 @@
 from core.utils import generate_order_id
 from rest_framework.views import APIView
-from rest_framework import status, permissions
+from rest_framework import status
 from rest_framework.response import Response
 from .models import PaymentTransaction
-from core.utils.generate_order_id import generate_order_id
 import base64
 import requests
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from django.conf import settings
 from credit.models import Credits
 from django.utils import timezone
+
 
 # 결제 주문 생성
 class PaymentPrepareView(APIView):
@@ -27,6 +25,7 @@ class PaymentPrepareView(APIView):
             status="READY",
         )
         return Response({"order_id": payment.order_id, "amount": payment.amount}, status=201)
+
 
 class ConfirmPaymentView(APIView):
 
@@ -51,7 +50,8 @@ class ConfirmPaymentView(APIView):
 
         res_json, status_code = self.send_payment_request(url, params, headers)
         if status_code != 200:
-            return Response({"error": "Payment confirmation failed", "detail": res_json}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Payment confirmation failed", "detail": res_json},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # 결제 성공 시 크레딧 충전
         user = request.user
@@ -70,7 +70,7 @@ class ConfirmPaymentView(APIView):
 
         return Response(res_json)
 
-    def create_headers(self,secret_key):
+    def create_headers(self, secret_key):
         userpass = f"{secret_key}:"
         encoded_u = base64.b64encode(userpass.encode()).decode()
         return {
@@ -78,7 +78,6 @@ class ConfirmPaymentView(APIView):
             "Content-Type": "application/json",
         }
 
-
-    def send_payment_request(self,url, params, headers):
+    def send_payment_request(self, url, params, headers):
         response = requests.post(url, json=params, headers=headers)
         return response.json(), response.status_code

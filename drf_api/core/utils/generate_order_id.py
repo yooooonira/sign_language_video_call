@@ -1,6 +1,6 @@
-
 import uuid
 from time import time
+
 
 def generate_order_id(user_id: str) -> str:
     timestamp = int(time() * 1000)  # 밀리초 단위 timestamp

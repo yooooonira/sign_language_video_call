@@ -1,15 +1,11 @@
-from django.urls import path,include
+from django.urls import path
 from . import views
 
 
 urlpatterns = [
+    path("", views.CallHistoryListView.as_view(), name="call-list"),  # 통화 기록 목록 조회 get
+    path("<int:pk>/", views.CallHistoryDetailView.as_view(), name="call-detail"),  # 특정 특정 기록 조회get/delete
+    path("record/", views.CallHistoryRecordView.as_view(), name="call-create"),  # 통화 정보 기록 post
 
-    path("", views.CallHistoryListView.as_view(),name="call-list"), #통화 기록 목록 조회 get 
-    path("<int:pk>/", views.CallHistoryDetailView.as_view(), name="call-detail"), #특정 특정 기록 조회get/delete
-    path("record/", views.CallHistoryRecordView.as_view(), name="call-create"), #통화 정보 기록 post
-
-    path("start/", views.CallRequestView.as_view(), name="call-start"), #room_id 전달  post
-
+    path("start/", views.CallRequestView.as_view(), name="call-start"),  # room_id 전달  post
 ]
-
-

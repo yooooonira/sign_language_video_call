@@ -1,10 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import permissions, status
+from rest_framework import status
 from .models import Credits
 from .serializers import CreditsSerializer
-from core.views import SupabaseJWTAuthentication
-import requests
 
 
 class CreditDetailView(APIView):

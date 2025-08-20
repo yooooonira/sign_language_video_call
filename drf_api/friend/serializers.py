@@ -1,16 +1,18 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model     #user/mmodels.py
-from django.db.models import Count # 중복 친구쌍 대비
-from .models import FriendRelations, Friend
+from django.contrib.auth import get_user_model     # user/mmodels.py
+# from django.db.models import Count # 중복 친구쌍 대비
+from .models import FriendRelations
 from user.models import Profile
 from user.serializers import UserSerializer
 
 User = get_user_model()
 
+
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['nickname', 'profile_image_url']
+
 
 class UserSimpleSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source="id")
@@ -32,7 +34,7 @@ class UserSimpleSerializer(serializers.ModelSerializer):
         }
 
 
-class FriendListSerializer(serializers.ModelSerializer): # 친구 목록 조회 (친구 -> 유저 -> 프로필)
+class FriendListSerializer(serializers.ModelSerializer):  # 친구 목록 조회 (친구 -> 유저 -> 프로필)
     profile = ProfileSerializer(read_only=True)  # select_related('profile') 결과 사용
     cnt = serializers.IntegerField(read_only=True)  # annotate(cnt=...) 값 내려주기
 
@@ -41,39 +43,38 @@ class FriendListSerializer(serializers.ModelSerializer): # 친구 목록 조회 
         fields = ['id', 'email', 'profile', 'cnt']
 
 
-
-
-class FriendDetailSerializer(FriendListSerializer): # 친구 프로필 조회
+class FriendDetailSerializer(FriendListSerializer):  # 친구 프로필 조회
     profile = ProfileSerializer(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
+
     class Meta:
         model = User
-        fields = ["id", "email", "profile","created_at"]
+        fields = ["id", "email", "profile", "created_at"]
 
 
-
-class ReceivedRequestSerializer(serializers.ModelSerializer): #친추 받은 목록
+class ReceivedRequestSerializer(serializers.ModelSerializer):  # 친추 받은 목록
     from_user = UserSerializer(read_only=True)
 
     class Meta:
         model = FriendRelations
         fields = ["id", "from_user", "status"]
 
-class SentRequestSerializer(serializers.ModelSerializer): #친추 보낸 목록
+
+class SentRequestSerializer(serializers.ModelSerializer):  # 친추 보낸 목록
     to_user = UserSerializer(read_only=True)
 
     class Meta:
         model = FriendRelations
         fields = ["id", "to_user", "status"]
 
-class FriendRequestCreateSerializer(serializers.ModelSerializer): #친구 추가
-    to_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())   #to_user:8 --> 8user에서 친구추가
 
+class FriendRequestCreateSerializer(serializers.ModelSerializer):  # 친구 추가
+    to_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())  # to_user:8 --> 8user에서 친구추가
 
     class Meta:
         model = FriendRelations
-        fields = ["to_user","id","status"]
-        read_only_fields = ["id","status"]
+        fields = ["to_user", "id", "status"]
+        read_only_fields = ["id", "status"]
 
     def create(self, validated_data):
         me = self.context['request'].user
@@ -84,7 +85,7 @@ class FriendRequestCreateSerializer(serializers.ModelSerializer): #친구 추가
         )
 
 
-class FriendRequestDetailSerializer(serializers.ModelSerializer): #친구 추가 (응답용)
+class FriendRequestDetailSerializer(serializers.ModelSerializer):  # 친구 추가 (응답용)
     from_user = UserSimpleSerializer(read_only=True)
     to_user = UserSimpleSerializer(read_only=True)
 

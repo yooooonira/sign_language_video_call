@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Credits
 
+
 @admin.register(Credits)
 class CreditAdmin(admin.ModelAdmin):
     list_display = ('user', 'remained_credit', 'last_updated', 'last_used')

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import PaymentTransaction
 
+
 @admin.register(PaymentTransaction)
 class PaymentTransactionAdmin(admin.ModelAdmin):
     list_display = ('order_id', 'user', 'amount', 'status', 'requested_at', 'confirmed_at')
