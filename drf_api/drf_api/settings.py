@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "notification",
     "rest_framework",
     'drf_spectacular',
+    "django_prometheus",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -77,6 +78,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware", #요청 시작 타이머 
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -85,6 +87,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django_prometheus.middleware.PrometheusAfterMiddleware",# 응답 끝 타이머 
 ]
 
 CHANNEL_LAYERS = {
@@ -132,11 +135,12 @@ ASGI_APPLICATION = "drf_api.asgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django_prometheus.db.backends.postgresql",# ← 기존 'django.db.backends.postgresql'에서 변경 //감싸는 형태라서 변경해도 된다
         "HOST": os.environ.get("DB_HOST"),
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASS"),
+        "PORT": "5432",   #포트 추가 
     }
 }
 

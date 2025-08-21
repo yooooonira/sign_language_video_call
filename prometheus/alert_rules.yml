@@ -1,0 +1,52 @@
+groups:
+- name: uptime-and-error
+  rules:
+  # A-1. 타겟 다운 감지 (up==0)
+  - alert: TargetDown
+    expr: up == 0 # ← (연결점) 대상(Target)이 죽었는지 (scrape 실패)
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Target down: {{ $labels.job }} ({{ $labels.instance }})"
+      description: "{{ $labels.instance }} of job {{ $labels.job }} is down for >2m."
+
+  # A-2. 5xx 오류율(전체) > 1%  (SLO 위반)
+  # └ http_requests_total 형태를 쓰는 경우
+  - alert: High5xxErrorRate
+# ← (연결점) http_requests_total 메트릭을 가정한 5xx 비율 경보
+    expr: |
+      sum(rate(django_http_responses_total_by_status_view_method_total{status=~"5.."}[5m]))
+      /
+      sum(rate(django_http_responses_total_by_status_view_method_total[5m])) > 0.01
+
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "5xx 오류율 > 1%"
+      description: "최근 5분 5xx 비율이 1%를 초과했습니다."
+
+  # A-3. 5xx 절대값(RPS) > 0.5 (트래픽 적을 때도 잡기)
+  - alert: High5xxAbsoluteRPS
+    expr: sum(rate(django_http_responses_total_by_status_view_method_total{status=~"5.."}[5m])) > 0.5
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "5xx 초당 실패 건수 > 0.5"
+      description: "5xx가 초당 0.5건(평균) 이상 발생 중."
+
+  # A-4. P95 응답시간 > 1초 (지연시간 감지)
+  - alert: HighLatencyP95
+    expr: |
+      histogram_quantile(
+        0.95,
+        sum by (le) (rate(django_http_requests_latency_seconds_bucket[5m]))
+      ) > 1
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "P95 응답시간 1s 초과"
+      description: "최근 10분간 P95 응답시간이 1초를 넘었습니다."

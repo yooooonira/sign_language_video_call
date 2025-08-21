@@ -26,6 +26,8 @@ urlpatterns = [
     path('api/schema/', PublicSchemaView.as_view(), name='api-schema'),
     path('api/docs/', PublicSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
 
+    path("", include("django_prometheus.urls")), 
+
 ]
 
 # 개발 모드(DEBUG=True)에서 Django가 직접 업로드된 미디어 파일을 서빙하게 함

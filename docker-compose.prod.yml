@@ -21,6 +21,10 @@ services:
     depends_on:
       - db
 
+    networks:   #promethus가 접근할 수 있도록 공용 네트워크 
+      - default
+      - monitoring_net
+
   db:
     image: postgres:15
     restart: always
@@ -29,7 +33,15 @@ services:
 
     env_file:
       - drf_api/.env
+    
+    networks:  #db metric을 가져올 거라면 필요 (필수 X)
+      - default
 
 volumes:
   postgres-data:
   static-data:
+
+networks: #네트워크 블록 추가 
+  default:
+  monitoring_net: #monitoring_net을 external 네크워크로 선언. 
+    external: true
