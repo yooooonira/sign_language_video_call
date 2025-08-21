@@ -3,6 +3,10 @@ global:
 
 route:
   receiver: 'slack-notifications'
+  group_by: ['alertname','job','instance']
+  group_wait: 30s
+  group_interval: 2m
+  repeat_interval: 3h
 
 receivers:
   - name: 'slack-notifications'
