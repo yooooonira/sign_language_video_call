@@ -11,9 +11,10 @@ route:
 receivers:
   - name: 'slack-notifications'
     slack_configs:
-      - api_url: "https://hooks.slack.com/services/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" # Slack Webhook URL
+      - api_url: "https://orange-nr81052.slack.com/archives/C09B9QZTSKG" # Slack Webhook URL
         channel: '#모니터링'
         send_resolved: true
 
 #alertmanager.yml 안에서 환경변수 치환 기능을 지원하지 않는다 -> env X
+
 
