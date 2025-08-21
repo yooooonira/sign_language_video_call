@@ -11,7 +11,7 @@ route:
 receivers:
   - name: 'slack-notifications'
     slack_configs:
-      - api_url: "https://orange-nr81052.slack.com/archives/C09B9QZTSKG" # Slack Webhook URL
+      - api_url: "https://hooks.slack.com/services/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" # Slack Webhook URL
         channel: '#모니터링'
         send_resolved: true
 
