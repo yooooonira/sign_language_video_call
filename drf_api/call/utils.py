@@ -1,5 +1,4 @@
 from .consumer import active_connections
-import asyncio
 
 async def notify_user(user_id: str, from_user: str, room_id: str):
     print(f"🔔 notify_user called: {user_id} <- from {from_user}, room {room_id}")

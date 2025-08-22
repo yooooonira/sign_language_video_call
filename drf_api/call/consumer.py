@@ -49,6 +49,8 @@ class CallNotifyConsumer(AsyncWebsocketConsumer):
         self.user_id = str(self.scope['query_string'].decode().split('=')[-1])
         await self.accept()
         active_connections[self.user_id] = self
+        print(f"💡 WebSocket connected user_id: {self.user_id}")
+
         print(f"✅ {self.user_id} 전역 알림 연결")
 
     async def disconnect(self, close_code):
