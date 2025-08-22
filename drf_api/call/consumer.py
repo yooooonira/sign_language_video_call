@@ -22,24 +22,21 @@ class CallConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         msg_type = data.get("type")
-        data["from_user"] = self.user_id  # 메시지 발신자 기록
+        data["from_user"] = self.user_id
+        print(f"📨 Received {msg_type} from {self.user_id}: {data}")  # <- 여기 추가
 
-        # 메시지 타입에 따라 다른 처리
         if msg_type in ["call_request", "offer", "answer", "ice"]:
-            # 1:1이라서 상대방에게만 전달
             await self.channel_layer.group_send(
                 self.group_name,
                 {
                     "type": "signal_message",
                     "data": data,
-                    "sender_channel": self.channel_name,  # 보내는 사람 제외
+                    "sender_channel": self.channel_name,
                 }
             )
-        else:
-            # 알 수 없는 타입 무시
-            pass
 
     async def signal_message(self, event):
-        # 보낸 사람 제외하고 다른 사람에게만 전송
+        print(f"📤 Sending to {self.channel_name} data: {event['data']}")  # <- 여기 추가
         if self.channel_name != event.get("sender_channel"):
             await self.send(text_data=json.dumps(event["data"]))
+
