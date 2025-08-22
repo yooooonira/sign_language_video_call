@@ -62,18 +62,23 @@ from asgiref.sync import async_to_sync
 
 class CallRequestView(APIView):
     def post(self, request):
-        rid = request.data.get("receiver_id")
-        room_id = uuid.uuid4().hex[:22]
+        # JWT 인증으로 request.user가 항상 있음
         caller_id = request.user.id
-        receiver_id = int(rid)
 
-        # 안전하게 동기에서 호출
+        # 프론트에서 선택한 상대방 ID
+        receiver_id = int(request.data.get("receiver_id"))
+
+        # 방 ID 생성
+        room_id = uuid.uuid4().hex[:22]
+
+        # 1️⃣ 상대방에게 WebSocket 알람 보내기
         async_to_sync(notify_user)(
-            user_id=str(receiver_id),
+            user_id=str(receiver_id),  # active_connections 키와 일치해야 함
             from_user=str(caller_id),
             room_id=room_id
         )
 
+        # 2️⃣ 프런트에 room_id 반환
         return Response({
             "room_id": room_id,
             "caller_id": caller_id,
