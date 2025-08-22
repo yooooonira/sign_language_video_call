@@ -14,6 +14,7 @@ services:
     # 런타임 환경변수로 바로 주입, 단일 또는 고정 값 설정에 편리(DJANGO_SETTINGS_MODULE 등)
     environment:
       - DJANGO_SETTINGS_MODULE=drf_api.settings
+      - ENV=production
     volumes:
       - /home/ec2-user/sign_language_video_call/static:/vol/web/static
       - /home/ec2-user/sign_language_video_call/media:/vol/web/media
@@ -21,7 +22,7 @@ services:
     depends_on:
       - db
 
-    networks:   #promethus가 접근할 수 있도록 공용 네트워크 
+    networks: #promethus가 접근할 수 있도록 공용 네트워크
       - default
       - monitoring_net
 
@@ -33,15 +34,15 @@ services:
 
     env_file:
       - drf_api/.env
-    
-    networks:  #db metric을 가져올 거라면 필요 (필수 X)
+
+    networks: #db metric을 가져올 거라면 필요 (필수 X)
       - default
 
 volumes:
   postgres-data:
   static-data:
 
-networks: #네트워크 블록 추가 
+networks: #네트워크 블록 추가
   default:
-  monitoring_net: #monitoring_net을 external 네크워크로 선언. 
+  monitoring_net: #monitoring_net을 external 네크워크로 선언.
     external: true
