@@ -10,6 +10,8 @@ from rest_framework.exceptions import AuthenticationFailed
 import uuid
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
+import asyncio
+from .utils import notify_user
 
 User = get_user_model()
 
@@ -56,11 +58,23 @@ class CallHistoryRecordView(generics.CreateAPIView):  # 통화 정보 기록 pos
         serializer.save()  # caller는 serializer.create에서 request.user로 강제
 
 
-class CallRequestView(APIView):  # 프런트용 room_id 전달
+class CallRequestView(APIView):
     def post(self, request):
         rid = request.data.get("receiver_id")
+        room_id = uuid.uuid4().hex[:22]
+        caller_id = request.user.id
+        receiver_id = int(rid)
+
+        # 1️⃣ 상대방에게 WebSocket 알림 전송
+        asyncio.create_task(notify_user(
+            user_id=str(receiver_id),
+            from_user=str(caller_id),
+            room_id=room_id
+        ))
+
+        # 2️⃣ 프런트에 room_id 반환
         return Response({
-            "room_id": uuid.uuid4().hex[:22],
-            "caller_id": request.user.id,
-            "receiver_id": int(rid)
+            "room_id": room_id,
+            "caller_id": caller_id,
+            "receiver_id": receiver_id
         }, status=201)

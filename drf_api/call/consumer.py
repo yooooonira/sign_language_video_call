@@ -1,7 +1,6 @@
 # call/consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-
 class CallConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
@@ -40,3 +39,32 @@ class CallConsumer(AsyncWebsocketConsumer):
         if self.channel_name != event.get("sender_channel"):
             await self.send(text_data=json.dumps(event["data"]))
 
+
+
+# 전역 사용자 WebSocket 관리
+active_connections = {}
+
+class CallNotifyConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        # ?user_id=xxx 쿼리 파라미터
+        self.user_id = self.scope['query_string'].decode().split('=')[-1]
+        await self.accept()
+        active_connections[self.user_id] = self
+        print(f"✅ {self.user_id} 전역 알림 연결")
+
+    async def disconnect(self, close_code):
+        if self.user_id in active_connections:
+            del active_connections[self.user_id]
+        print(f"❌ {self.user_id} 전역 알림 종료")
+
+    async def receive(self, text_data):
+        # 현재 Layout에서 수신용이므로, 보낼 필요 없음
+        print("수신:", text_data)
+
+    # 다른 곳에서 호출 가능
+    async def send_call_request(self, from_user, room_id):
+        await self.send(text_data=json.dumps({
+            "type": "call_request",
+            "from_user": from_user,
+            "room_id": room_id
+        }))
