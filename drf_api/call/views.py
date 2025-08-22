@@ -10,8 +10,6 @@ from rest_framework.exceptions import AuthenticationFailed
 import uuid
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-import asyncio
-from .utils import notify_user
 
 User = get_user_model()
 
@@ -58,29 +56,17 @@ class CallHistoryRecordView(generics.CreateAPIView):  # 통화 정보 기록 pos
         serializer.save()  # caller는 serializer.create에서 request.user로 강제
 
 
-from asgiref.sync import async_to_sync
-
-class CallRequestView(APIView):
+class CallRequestView(APIView):  # 프런트용 room_id 전달
     def post(self, request):
-        # JWT 인증으로 request.user가 항상 있음
-        caller_id = request.user.id
-
-        # 프론트에서 선택한 상대방 ID
-        receiver_id = int(request.data.get("receiver_id"))
-
-        # 방 ID 생성
+        rid = request.data.get("receiver_id")
         room_id = uuid.uuid4().hex[:22]
-
-        # 1️⃣ 상대방에게 WebSocket 알람 보내기
-        async_to_sync(notify_user)(
-            user_id=str(receiver_id),  # active_connections 키와 일치해야 함
-            from_user=str(caller_id),
+        CallHistory.objects.create(
+            caller_id=request.user.id,
+            receiver_id=rid,
             room_id=room_id
         )
-
-        # 2️⃣ 프런트에 room_id 반환
         return Response({
             "room_id": room_id,
-            "caller_id": caller_id,
-            "receiver_id": receiver_id
+            "caller_id": request.user.id,
+            "receiver_id": int(rid)
         }, status=201)

@@ -40,27 +40,3 @@ class CallConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps(event["data"]))
 
 
-
-# 전역 사용자 WebSocket 관리
-active_connections = {}
-
-class CallNotifyConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.user_id = str(self.scope['query_string'].decode().split('=')[-1])
-        await self.accept()
-        active_connections[self.user_id] = self
-        print(f"💡 WebSocket connected user_id: {self.user_id}")
-
-        print(f"✅ {self.user_id} 전역 알림 연결")
-
-    async def disconnect(self, close_code):
-        if self.user_id in active_connections:
-            del active_connections[self.user_id]
-        print(f"❌ {self.user_id} 전역 알림 종료")
-
-    async def send_call_request(self, from_user, room_id):
-        await self.send(text_data=json.dumps({
-            "type": "call_request",
-            "from_user": from_user,
-            "room_id": room_id
-        }))
