@@ -74,7 +74,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_cleanup.apps.CleanupConfig',
-
 ]
 
 MIDDLEWARE = [
@@ -179,6 +178,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 AUTH_USER_MODEL = "user.User"
+ASGI_APPLICATION = "app.asgi.application"
 
 # 브라우저에서 정적 파일에 접근할 때 사용하는 URL 경로
 STATIC_URL = '/static/'
