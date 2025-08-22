@@ -21,6 +21,7 @@ services:
 
     depends_on:
       - db
+      - redis
 
     networks: #promethus가 접근할 수 있도록 공용 네트워크
       - default
@@ -36,6 +37,14 @@ services:
       - drf_api/.env
 
     networks: #db metric을 가져올 거라면 필요 (필수 X)
+      - default
+
+  redis: # <- 추가
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
       - default
 
 volumes:
