@@ -58,6 +58,8 @@ class CallHistoryRecordView(generics.CreateAPIView):  # 통화 정보 기록 pos
         serializer.save()  # caller는 serializer.create에서 request.user로 강제
 
 
+from asgiref.sync import async_to_sync
+
 class CallRequestView(APIView):
     def post(self, request):
         rid = request.data.get("receiver_id")
@@ -65,14 +67,13 @@ class CallRequestView(APIView):
         caller_id = request.user.id
         receiver_id = int(rid)
 
-        # 1️⃣ 상대방에게 WebSocket 알림 전송
-        asyncio.create_task(notify_user(
+        # 안전하게 동기에서 호출
+        async_to_sync(notify_user)(
             user_id=str(receiver_id),
             from_user=str(caller_id),
             room_id=room_id
-        ))
+        )
 
-        # 2️⃣ 프런트에 room_id 반환
         return Response({
             "room_id": room_id,
             "caller_id": caller_id,
