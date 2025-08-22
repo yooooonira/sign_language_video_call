@@ -1,32 +1,36 @@
-name: deploy-ssh-compose 
+name: deploy-ssh-compose
 
 on:
   push:
-    branches: [ "main" ] # main에 push되면 자동 실행 
-  workflow_dispatch: 
+    branches: ["main"]   # main에 push되면 자동 실행
+  workflow_dispatch:
 
 jobs:
-  deploy:  
-    runs-on: ubuntu-latest 
+  deploy:
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Setup SSH 
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Deploy on EC2 
+      - name: Deploy on EC2
         run: |
-          ssh -o StrictHostKeyChecking=yes ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh -o StrictHostKeyChecking=yes ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -euo pipefail
 
           cd "${{ secrets.PROJECT_DIR }}"
 
-          #  최신화 
+          # 1) 최신화
           git fetch --all
           git reset --hard origin/main
 
           FILE="docker-compose.prod.yml"
+
+          # 2) 배포
           if [ -f "$FILE" ]; then
             docker-compose -f $FILE pull || true
             docker-compose -f $FILE up -d --build
@@ -34,8 +38,13 @@ jobs:
             docker-compose up -d --build
           fi
 
-          # 상태 확인
+          # 3) 상태 확인 (Actions 로그에 깔끔히 남기기)
+          echo "=== Docker Compose Services ==="
           docker-compose -f $FILE ps
 
-          docker image prune -f
+          echo "=== App Logs (tail 20) ==="
+          docker-compose -f $FILE logs --tail=20 app || true
+
+          # 4) 이미지 정리
+          docker image prune -f || true
           EOF
