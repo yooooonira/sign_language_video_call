@@ -1,10 +1,17 @@
-from .consumer import active_connections
+import requests
+from django.conf import settings
 
-async def notify_user(user_id: str, from_user: str, room_id: str):
-    print(f"🔔 notify_user called: {user_id} <- from {from_user}, room {room_id}")
 
-    consumer = active_connections.get(user_id)
-    if consumer:
-        await consumer.send_call_request(from_user, room_id)
-    else:
-        print(f"⚠️ User {user_id} not connected. 알람 전송 실패")
+def notify_user_via_supabase(receiver_supabase_id: str, room_id: str, caller_id: int):
+    url = f"{settings.SUPABASE_URL}/realtime/v1/broadcast/user-{receiver_supabase_id}"
+    payload = {
+        "type": "call_request",
+        "room_id": room_id,
+        "from_user": caller_id,
+    }
+    headers = {
+        "apikey": settings.SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}",
+        "Content-Type": "application/json",
+    }
+    requests.post(url, json=payload, headers=headers)

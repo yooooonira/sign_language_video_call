@@ -10,6 +10,7 @@ from rest_framework.exceptions import AuthenticationFailed
 import uuid
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
+from .utils import notify_user_via_supabase
 
 User = get_user_model()
 
@@ -56,7 +57,7 @@ class CallHistoryRecordView(generics.CreateAPIView):  # 통화 정보 기록 pos
         serializer.save()  # caller는 serializer.create에서 request.user로 강제
 
 
-class CallRequestView(APIView):  # 프런트용 room_id 전달
+class CallRequestView(APIView):
     def post(self, request):
         rid = request.data.get("receiver_id")
         room_id = uuid.uuid4().hex[:22]
@@ -65,8 +66,13 @@ class CallRequestView(APIView):  # 프런트용 room_id 전달
             receiver_id=rid,
             room_id=room_id
         )
+
+        # 푸시
+        notify_user_via_supabase(receiver_supabase_id=rid, room_id=room_id, caller_id=request.user.id)
+
         return Response({
             "room_id": room_id,
             "caller_id": request.user.id,
             "receiver_id": int(rid)
         }, status=201)
+
