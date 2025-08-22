@@ -11,7 +11,7 @@ route:
 receivers:
   - name: 'slack-notifications'
     slack_configs:
-      - api_url: "https://hooks.slack.com/services/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"
+      - api_url: "https://hooks.slack.com/services/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"
         channel: '#모니터링'
         send_resolved: true
 
