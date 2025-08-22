@@ -23,6 +23,7 @@ load_dotenv(BASE_DIR / ".env")
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY','changeme')
 SUPABASE_JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET')
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
 FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL')
 BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL')
 TOSS_SECRET_KEY = os.environ.get('TOSS_SECRET_KEY')
@@ -77,7 +78,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "django_prometheus.middleware.PrometheusBeforeMiddleware", #요청 시작 타이머 
+    "django_prometheus.middleware.PrometheusBeforeMiddleware", #요청 시작 타이머
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -86,7 +87,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "django_prometheus.middleware.PrometheusAfterMiddleware",# 응답 끝 타이머 
+    "django_prometheus.middleware.PrometheusAfterMiddleware",# 응답 끝 타이머
 ]
 
 CHANNEL_LAYERS = {
@@ -139,7 +140,7 @@ DATABASES = {
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASS"),
-        "PORT": "5432",   #포트 추가 
+        "PORT": "5432",   #포트 추가
     }
 }
 
