@@ -31,7 +31,7 @@ channels-redis==4.1.0
 
 # ASGI / Production 서버
 gunicorn>=21.0.0,<22.0.0
-uvicorn>=0.23.0,<0.24.0
+uvicorn[standard]>=0.23.0,<0.24.0
 
 # 모니터링
 django-prometheus>=2.3.1
