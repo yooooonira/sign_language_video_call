@@ -19,9 +19,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'drf_api.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": AuthMiddlewareStack(
-        URLRouter(
-            call_routing.websocket_urlpatterns
-        )
-    ),
+    "websocket": URLRouter(
+        call_routing.websocket_urlpatterns
+    )
 })
