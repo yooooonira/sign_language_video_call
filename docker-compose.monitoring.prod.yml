@@ -32,6 +32,7 @@ services:
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager-data:/alertmanager
+      - ./alertmanager/secrets:/etc/alertmanager/secrets:ro  
     networks: [monitoring_net]
 
   grafana:

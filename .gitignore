@@ -145,3 +145,5 @@ cython_debug/
 # fronten
 ../frontend/
 /static/
+# monitoring
+alertmanager/secrets/
