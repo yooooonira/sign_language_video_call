@@ -5,8 +5,8 @@ ENV PYTHONUNBUFFERED 1
 
 COPY ./requirements.txt /tmp/requirements.txt
 COPY ./requirements.dev.txt /tmp/requirements.dev.txt
-COPY ./scripts /scripts
 COPY drf_api/private_key.pem /py/keys/private_key.pem
+COPY ./scripts /scripts
 COPY . /app
 WORKDIR /app
 EXPOSE 8000
@@ -37,6 +37,7 @@ RUN adduser --disabled-password --gecos "" django-user && \
     chmod -R +x /scripts
 
 RUN chown django-user:django-user /py/keys/private_key.pem && chmod 600 /py/keys/private_key.pem
+
 
 USER django-user
 
