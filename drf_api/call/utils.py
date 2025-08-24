@@ -4,7 +4,7 @@ from pathlib import Path
 
 from django.conf import settings
 from pywebpush import webpush
-vapid_private_key_path = Path(settings.VAPID_PRIVATE_KEY_PATH)
+vapid_private_key_path = Path("/py/keys/private_key.pem")
 vapid_private_key = vapid_private_key_path.read_text()
 def notify_user_via_webpush(subscription_info, caller_id, room_id):
     payload = {

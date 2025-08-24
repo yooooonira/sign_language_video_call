@@ -30,7 +30,6 @@ TOSS_SECRET_KEY = os.environ.get('TOSS_SECRET_KEY')
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
 
 # 웹 푸시 알림 설정
-VAPID_PRIVATE_KEY_PATH = BASE_DIR / "private_key.pem"
 VAPID_CLAIMS = {"sub": "oscar2272@naver.com"}
 
 # 접속 허용 도메인
