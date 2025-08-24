@@ -12,7 +12,5 @@ if [ "$ENV" = "production" ]; then
         --workers 4 \
         --log-level info
 else
-    # uvicorn drf_api.asgi:application --host 0.0.0.0 --port 8000 --reload
-    uvicorn drf_api.asgi:application --host 0.0.0.0 --port 8000 --reload --log-level debug
-
+    uvicorn drf_api.asgi:application --host 0.0.0.0 --port 8000 --reload
 fi
