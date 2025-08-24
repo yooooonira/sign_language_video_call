@@ -29,6 +29,10 @@ BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL')
 TOSS_SECRET_KEY = os.environ.get('TOSS_SECRET_KEY')
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
 
+# 웹 푸시 알림 설정
+VAPID_PRIVATE_KEY_PATH = BASE_DIR / "private_key.pem"
+VAPID_CLAIMS = {"sub": "oscar2272@naver.com"}
+
 # 접속 허용 도메인
 ALLOWED_HOSTS = []
 ALLOWED_HOSTS.extend(
@@ -65,6 +69,7 @@ INSTALLED_APPS = [
     # "friend",
     "friend.apps.FriendConfig",
     "notification",
+    "subscription",
     "rest_framework",
     'drf_spectacular',
     "django_prometheus",

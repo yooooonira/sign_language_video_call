@@ -25,8 +25,8 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('api/schema/', PublicSchemaView.as_view(), name='api-schema'),
     path('api/docs/', PublicSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
-
-    path("", include("django_prometheus.urls")), 
+    path('api/subscriptions/', include("subscription.urls")),
+    path("", include("django_prometheus.urls")),
 
 ]
 

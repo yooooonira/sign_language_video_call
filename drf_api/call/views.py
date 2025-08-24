@@ -10,7 +10,8 @@ from rest_framework.exceptions import AuthenticationFailed
 import uuid
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from .utils import notify_user_via_supabase
+from .utils import notify_user_via_webpush
+from subscription.models import PushSubscription
 
 User = get_user_model()
 
@@ -57,22 +58,16 @@ class CallHistoryRecordView(generics.CreateAPIView):  # 통화 정보 기록 pos
         serializer.save()  # caller는 serializer.create에서 request.user로 강제
 
 
+# views.py
 class CallRequestView(APIView):
     def post(self, request):
         rid = request.data.get("receiver_id")
         room_id = uuid.uuid4().hex[:22]
-        CallHistory.objects.create(
-            caller_id=request.user.id,
-            receiver_id=rid,
-            room_id=room_id
-        )
 
-        # 푸시
-        notify_user_via_supabase(receiver_supabase_id=rid, room_id=room_id, caller_id=request.user.id)
+        # CallHistory 저장 등 기존 로직
 
-        return Response({
-            "room_id": room_id,
-            "caller_id": request.user.id,
-            "receiver_id": int(rid)
-        }, status=201)
+        # 푸시 알림
+        subscription = PushSubscription.objects.get(user_id=rid)
+        notify_user_via_webpush(subscription.subscription_info, request.user.username, room_id)
 
+        return Response({"room_id": room_id})

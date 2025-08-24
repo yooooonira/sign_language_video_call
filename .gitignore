@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+# VAPID keys
+private_key.pem
+public_key.pem
 # C extensions
 *.so
 # locustfile
