@@ -14,7 +14,6 @@ services:
     # 런타임 환경변수로 바로 주입, 단일 또는 고정 값 설정에 편리(DJANGO_SETTINGS_MODULE 등)
     environment:
       - DJANGO_SETTINGS_MODULE=drf_api.settings
-      - ENV=production
     volumes:
       - /home/ec2-user/sign_language_video_call/static:/vol/web/static
       - /home/ec2-user/sign_language_video_call/media:/vol/web/media
