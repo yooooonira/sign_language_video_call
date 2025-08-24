@@ -10,7 +10,7 @@ if [ "$ENV" = "production" ]; then
         -k uvicorn.workers.UvicornWorker \
         --bind 0.0.0.0:8000 \
         --workers 4 \
-        --log-level info
+        --log-level debug
 else
     uvicorn drf_api.asgi:application --host 0.0.0.0 --port 8000 --reload
 fi
