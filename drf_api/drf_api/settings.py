@@ -48,11 +48,12 @@ CORS_ALLOWED_ORIGINS = [
 
 # CSRF 보호를 허용할 도메인
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:8000",
 ]
 if BACKEND_BASE_URL:
     CSRF_TRUSTED_ORIGINS.append(BACKEND_BASE_URL)
-
+if FRONTEND_BASE_URL:
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_BASE_URL)
 # 리버스 프록시 환경에서 HTTPS를 인식하도록 설정.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
