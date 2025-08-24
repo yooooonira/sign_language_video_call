@@ -68,6 +68,6 @@ class CallRequestView(APIView):
 
         # 푸시 알림
         subscription = PushSubscription.objects.get(user_id=rid)
-        notify_user_via_webpush(subscription.subscription_info, request.user.username, room_id)
+        notify_user_via_webpush(subscription.subscription_info, request.user.id, room_id)
 
         return Response({"room_id": room_id})
