@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+mkdir -p /vol/web/media/uploads
+chmod -R 755 /vol/web/media/uploads
+
 python manage.py wait_for_db
 python manage.py collectstatic --noinput
 python manage.py migrate
