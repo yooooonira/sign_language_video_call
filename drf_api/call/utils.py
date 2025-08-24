@@ -14,6 +14,6 @@ def notify_user_via_webpush(subscription_info, caller_id, room_id):
     webpush(
         subscription_info=subscription_info,
         data=json.dumps(payload),
-        vapid_private_key=settings.VAPID_PRIVATE_KEY_BASE64,
+        vapid_private_key=settings.VAPID_PRIVATE_KEY,
         vapid_claims={"sub": "mailto:your@email.com"}
     )
