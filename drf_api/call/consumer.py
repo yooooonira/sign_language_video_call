@@ -18,6 +18,7 @@ class CallConsumer(AsyncWebsocketConsumer):
         msg_type = data.get("type")
         data["from_user"] = self.user_id
 
+        # 기존 신호 메시지
         if msg_type in ["call_request", "offer", "answer", "ice"]:
             await self.channel_layer.group_send(
                 self.group_name,
@@ -27,8 +28,8 @@ class CallConsumer(AsyncWebsocketConsumer):
                     "sender_channel": self.channel_name,
                 }
             )
+        # 통화 종료
         elif msg_type == "end_call":
-            # 종료 메시지 그룹 전송
             await self.channel_layer.group_send(
                 self.group_name,
                 {
@@ -36,8 +37,19 @@ class CallConsumer(AsyncWebsocketConsumer):
                     "sender_channel": self.channel_name,
                 }
             )
+        # ✅ 수락 / 거절 처리
+        elif msg_type in ["accepted", "rejected"]:
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    "type": "signal_message",
+                    "data": {"type": msg_type},
+                    "sender_channel": self.channel_name,
+                }
+            )
 
     async def signal_message(self, event):
+        # sender 제외하고 모두 전달
         if self.channel_name != event.get("sender_channel"):
             await self.send(text_data=json.dumps(event["data"]))
 
