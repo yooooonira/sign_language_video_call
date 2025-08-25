@@ -34,7 +34,7 @@ VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY_BASE64')
 VAPID_CLAIMS = {"sub": "oscar2272@naver.com"}
 
 # 접속 허용 도메인
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["3.37.127.118",]
 ALLOWED_HOSTS.extend(
     filter(
         None,
