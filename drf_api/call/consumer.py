@@ -22,7 +22,6 @@ class CallConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         msg_type = data.get("type")
         data["from_user"] = self.user_id
-        print(f"📨 Received {msg_type} from {self.user_id}: {data}")  # <- 여기 추가
 
         if msg_type in ["call_request", "offer", "answer", "ice"]:
             await self.channel_layer.group_send(
@@ -35,7 +34,6 @@ class CallConsumer(AsyncWebsocketConsumer):
             )
 
     async def signal_message(self, event):
-        print(f"📤 Sending to {self.channel_name} data: {event['data']}")  # <- 여기 추가
         if self.channel_name != event.get("sender_channel"):
             await self.send(text_data=json.dumps(event["data"]))
 
