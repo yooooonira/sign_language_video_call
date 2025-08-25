@@ -77,6 +77,27 @@ services:
     depends_on:
       - prometheus
 
+  signlang:
+    build:
+      context: ./fastapi_api
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"              
+    volumes:
+      - ./fastapi_api:/app
+    environment:
+      - DB_HOST=db
+      - DB_NAME=devdb
+      - DB_USER=devuser
+      - DB_PASS=changeme
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - db
+      - redis
+
+
 
 volumes:
   dev-db-data:

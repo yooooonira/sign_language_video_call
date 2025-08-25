@@ -45,6 +45,25 @@ services:
       - "6379:6379"
     networks:
       - default
+  
+  signlang:
+    build:
+      context: ./fastapi_api
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - db
+      - redis
+    # 포트는 prod에서는 Nginx 통해서만 접근 → ports 생략
+
 
 volumes:
   postgres-data:
