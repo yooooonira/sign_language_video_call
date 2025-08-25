@@ -105,7 +105,7 @@ class CallMissedView(APIView):
     def post(self, request):
         room_id = request.data.get("room_id")
         caller_id = request.data.get("caller_id")
-        receiver = request.data.get("receiver_id")  # SW에서 자동 호출 시 전달
+        receiver = request.user
 
         caller = get_object_or_404(User, id=caller_id)
         receiver = get_object_or_404(User, id=receiver)

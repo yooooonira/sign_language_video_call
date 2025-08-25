@@ -27,7 +27,6 @@ urlpatterns = [
     path('api/docs/', PublicSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
     path('api/subscriptions/', include("subscription.urls")),
     path("", include("django_prometheus.urls")),
-
 ]
 
 # 개발 모드(DEBUG=True)에서 Django가 직접 업로드된 미디어 파일을 서빙하게 함
