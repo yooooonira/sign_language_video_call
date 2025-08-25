@@ -51,6 +51,8 @@ services:
       context: ./fastapi_api
       dockerfile: Dockerfile
     restart: always
+    ports:
+      - "8001:8001"
     environment:
       - DB_HOST=db
       - DB_NAME=${DB_NAME}
