@@ -17,7 +17,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Deploy on EC2
+      - name: EC2 배포
         run: |
           ssh -o StrictHostKeyChecking=yes ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           set -euo pipefail
@@ -30,21 +30,23 @@ jobs:
 
           FILE="docker-compose.prod.yml"
 
-          # 2) 배포
-          if [ -f "$FILE" ]; then
-            docker-compose -f $FILE pull || true
-            docker-compose -f $FILE up -d --build
-          else
-            docker-compose up -d --build
-          fi
+          # 2) 컨테이너 다운 
+          echo "[2단계] 이전 컨테이너 종료"
+          docker-compose -p sl-app -f $FILE down --remove-orphans || true
 
-          # 3) 상태 확인 (Actions 로그에 깔끔히 남기기)
-          echo "=== Docker Compose Services ==="
-          docker-compose -f $FILE ps
+          # 3) 컨테이너 실행 
+          echo "[3단계] 새로운 컨테이너 실행"
+          docker-compose -p sl-app -f $FILE up -d --build --remove-orphans
 
-          echo "=== App Logs (tail 20) ==="
-          docker-compose -f $FILE logs --tail=20 app || true
 
-          # 4) 이미지 정리
+          # 4) 상태 확인 
+          echo "[4단계] 실행 중인 서비스 확인"
+          docker-compose -p sl-app -f $FILE ps
+
+          # 5) 최근 로그 20줄 
+          echo "[5단계] 최근 로그 20줄"
+          docker-compose -p sl-app -f $FILE logs --tail=20 app || true
+
+          # 6) 이미지 정리
           docker image prune -f || true
           EOF
