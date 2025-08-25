@@ -45,7 +45,7 @@ ALLOWED_HOSTS.extend(
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
-
+CORS_ALLOW_CREDENTIALS = True
 # CSRF 보호를 허용할 도메인
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
