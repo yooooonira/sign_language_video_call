@@ -60,6 +60,16 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # HTTPS 환경에서만 CSRF 쿠키 전송
 CSRF_COOKIE_SECURE = True
 
+# OPTIONS 요청에 대한 허용
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
 INSTALLED_APPS = [
     "core",
     "user",

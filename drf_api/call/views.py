@@ -68,8 +68,8 @@ class CallRequestView(APIView):
         # CallHistory 저장 등 기존 로직
 
         # 푸시 알림
-        caller = User.objects.get(id=request.user.id)
-        caller_name = getattr(caller.profile, "nickname", caller.email)  # profile.nickname 없으면 email fallback
+        caller = User.objects.get(id=request.user.id)  # me
+        caller_name = getattr(caller.profile, "nickname", caller.email)  # profile.nickname
         subscription = PushSubscription.objects.get(user_id=rid)
         notify_user_via_webpush(subscription.subscription_info, request.user.id, caller_name, room_id)
 
