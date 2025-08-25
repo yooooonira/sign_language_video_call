@@ -97,28 +97,6 @@ class CallRejectView(APIView):
 
         return Response({"success": True, "call_id": call.id})
 
-# 통화 부재중 뷰
-class CallMissedView(APIView):
-    """
-    통화가 걸렸지만 30초 동안 수락하지 않아 부재중 처리
-    """
-    def post(self, request):
-        room_id = request.data.get("room_id")
-        caller_id = request.data.get("caller_id")
-        receiver = request.user
-
-        caller = get_object_or_404(User, id=caller_id)
-        receiver = get_object_or_404(User, id=receiver)
-
-        call = CallHistory.objects.create(
-            caller=caller,
-            receiver=receiver,
-            call_status='MISSED',
-            room_id=room_id
-        )
-
-        return Response({"success": True, "call_id": call.id})
-
 # 통화 수락 뷰
 class CallAcceptView(APIView):
     """
@@ -141,6 +119,30 @@ class CallAcceptView(APIView):
         )
 
         return Response({"success": True, "call_id": call.id})
+
+# 통화 부재중 뷰
+class CallMissedView(APIView):
+    """
+    통화가 걸렸지만 30초 동안 수락하지 않아 부재중 처리
+    """
+    def post(self, request):
+        room_id = request.data.get("room_id")
+        caller_id = request.data.get("caller_id")
+        receiver = request.user
+
+        caller = get_object_or_404(User, id=caller_id)
+        receiver = get_object_or_404(User, id=receiver)
+
+        call = CallHistory.objects.create(
+            caller=caller,
+            receiver=receiver,
+            call_status='MISSED',
+            room_id=room_id
+        )
+
+        return Response({"success": True, "call_id": call.id})
+
+
 
 
 # 통화 종료 뷰
