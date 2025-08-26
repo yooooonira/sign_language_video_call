@@ -4,7 +4,7 @@ import asyncio
 
 router = APIRouter()
 
-@router.websocket("/ai") # 클라이언트는 ws://localhost:8000/ws 로 연결. ws붙으면 허브로 들어감 
+@router.websocket("/ai") # 클라이언트는 ws://localhost:8000/ai 로 연결. ai붙으면 허브로 들어감 
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept() # 클라이언트의 WebSocket 연결 요청을 수락
     await hub.add(websocket) # 허브에 등록 
