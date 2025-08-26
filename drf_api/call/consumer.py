@@ -52,18 +52,8 @@ class CallConsumer(AsyncWebsocketConsumer):
 
             logger.info(f"Received {msg_type} from user {self.user_id} in room {self.room_id}")
 
-            # 룸 참여 메시지
-            if msg_type == "join_room":
-                await self.channel_layer.group_send(
-                    self.group_name,
-                    {
-                        "type": "join_room_message",
-                        "data": data,
-                        "sender_channel": self.channel_name,
-                    }
-                )
             # WebRTC signaling 메시지들
-            elif msg_type in ["offer", "answer", "ice"]:
+            if msg_type in ["offer", "answer", "ice"]:
                 await self.channel_layer.group_send(
                     self.group_name,
                     {
@@ -89,14 +79,6 @@ class CallConsumer(AsyncWebsocketConsumer):
             logger.error(f"Invalid JSON received from user {self.user_id}")
         except Exception as e:
             logger.error(f"Error processing message from user {self.user_id}: {e}")
-
-    async def join_room_message(self, event):
-        # sender 제외하고 모든 사용자에게 전달
-        if self.channel_name != event.get("sender_channel"):
-            await self.send(text_data=json.dumps({
-                "type": "join_room",
-                "from_user": event["data"]["from_user"]
-            }))
 
     async def signal_message(self, event):
         # sender 제외하고 모두에게 전달
