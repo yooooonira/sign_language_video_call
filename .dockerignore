@@ -12,3 +12,7 @@ app/*/*/*/__pycache__/
 .env/
 .venv/
 venv/
+# 서비스의 환경파일 무시 
+*.env
+drf_api/.env
+fastapi_api/.env

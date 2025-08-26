@@ -53,21 +53,62 @@ services:
     restart: always
     ports:
       - "8001:8001"
+    env_file:
+      - fastapi_api/.env 
+ 
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    restart: always
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus-data:/prometheus
+    networks: [monitoring_net]
+
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    restart: always
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+      - ./alertmanager/secrets:/etc/alertmanager/secrets:ro  
+    networks: [monitoring_net]
+
+
+  grafana:
+    image: grafana/grafana:10.4.5
+    restart: always
+    env_file:
+      - drf_api/.env 
     environment:
-      - DB_HOST=db
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASS=${DB_PASS}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - PYTHONUNBUFFERED=1
-  
-    # 포트는 prod에서는 Nginx 통해서만 접근 → ports 생략
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SERVER_ROOT_URL=https://grafana.5range.site
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks: [monitoring_net]
+    ports:
+      - "127.0.0.1:3000:3000"
 
 
 volumes:
   postgres-data:
   static-data:
+  prometheus-data:
+  grafana-data:
+  alertmanager-data:
 
 networks: #네트워크 블록 추가
   default:
