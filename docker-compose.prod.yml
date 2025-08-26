@@ -46,7 +46,7 @@ services:
     networks:
       - default
   
-  signlang:
+  ai:
     build:
       context: ./fastapi_api
       dockerfile: Dockerfile
@@ -61,9 +61,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - PYTHONUNBUFFERED=1
-    depends_on:
-      - db
-      - redis
+  
     # 포트는 prod에서는 Nginx 통해서만 접근 → ports 생략
 
 
