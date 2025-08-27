@@ -132,7 +132,6 @@ class CallMissedView(APIView):
         receiver = request.user
 
         caller = get_object_or_404(User, id=caller_id)
-        receiver = get_object_or_404(User, id=receiver)
 
         call = CallHistory.objects.create(
             caller=caller,
