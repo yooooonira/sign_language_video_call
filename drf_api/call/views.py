@@ -127,7 +127,7 @@ class CallMissedView(APIView):
     """
     def post(self, request):
         room_id = request.data.get("room_id")
-        caller_id = request.data.get("caller_id")
+        caller_id = request.data.get("receiver_id")
         receiver = request.user
 
         caller = get_object_or_404(User, id=caller_id)

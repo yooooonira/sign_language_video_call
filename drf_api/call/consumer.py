@@ -1,5 +1,6 @@
 import json
 import logging
+# ignore unused import
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 logger = logging.getLogger(__name__)
