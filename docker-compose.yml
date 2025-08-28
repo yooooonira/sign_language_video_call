@@ -95,6 +95,20 @@ services:
       - PYTHONUNBUFFERED=1
 
 
+  ai_worker:
+    build:
+      context: .
+      dockerfile: ai_worker/Dockerfile
+    env_file:
+      - ai_worker/.env  
+    volumes:
+      - ./ai_worker:/app/ai_worker
+      - ./ai_worker/AI_Language:/app/AI_Language
+    depends_on:
+      - ai
+    restart: unless-stopped
+
+
 
 volumes:
   dev-db-data:

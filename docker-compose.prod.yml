@@ -101,6 +101,16 @@ services:
     networks: [monitoring_net]
     ports:
       - "127.0.0.1:3000:3000"
+  
+  ai_worker:
+    build:
+      context: .
+      dockerfile: ai_worker/Dockerfile
+    env_file:
+      - ai_worker/.env  
+    depends_on:
+      - ai
+    restart: always
 
 
 volumes:
