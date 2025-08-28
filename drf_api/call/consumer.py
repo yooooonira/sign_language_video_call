@@ -1,5 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+
+
 class CallConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
@@ -15,8 +17,10 @@ class CallConsumer(AsyncWebsocketConsumer):
                 "sender_channel": self.channel_name,
             }
         )
+
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
     async def receive(self, text_data):
         data = json.loads(text_data)
         msg_type = data.get("type")
@@ -40,14 +44,17 @@ class CallConsumer(AsyncWebsocketConsumer):
                     "sender_channel": self.channel_name,
                 }
             )
+
     async def signal_message(self, event):
         # sender 제외하고 모두 전달
         if self.channel_name != event.get("sender_channel"):
             await self.send(text_data=json.dumps(event["data"]))
+
     async def user_joined_message(self, event):
         # sender 제외하고 다른 사용자들에게 새 사용자가 들어왔다고 알림
         if self.channel_name != event.get("sender_channel"):
             await self.send(text_data=json.dumps({"type": "user_joined"}))
+
     async def call_ended(self, event):
         if self.channel_name != event.get("sender_channel"):
             await self.send(text_data=json.dumps({"type": "end_call"}))

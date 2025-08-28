@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import PushSubscription
 import json
 
+
 class SaveSubscriptionView(APIView):
     permission_classes = [IsAuthenticated]
 

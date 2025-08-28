@@ -3,6 +3,7 @@ from pywebpush import webpush, WebPushException
 from django.conf import settings
 import json
 
+
 def notify_user_via_webpush(subscription_info, caller_id, room_id):
     payload = json.dumps({
         "type": "incoming_call",

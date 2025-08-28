@@ -2,6 +2,7 @@ import json
 from django.conf import settings
 from pywebpush import webpush
 
+
 def notify_user_via_webpush(subscription_info, caller_id, caller_name, room_id):
     payload = {
         "type": "incoming_call",

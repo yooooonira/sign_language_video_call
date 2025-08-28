@@ -59,6 +59,7 @@ class CallHistoryRecordView(generics.CreateAPIView):  # 통화 정보 기록 pos
             raise AuthenticationFailed("인증이 필요합니다.")
         serializer.save()  # caller는 serializer.create에서 request.user로 강제
 
+
 # 통화 요청 뷰
 class CallRequestView(APIView):
     def post(self, request):
@@ -74,6 +75,7 @@ class CallRequestView(APIView):
         notify_user_via_webpush(subscription.subscription_info, request.user.id, caller_name, room_id)
 
         return Response({"room_id": room_id})
+
 
 # 통화 거절 뷰
 class CallRejectView(APIView):
@@ -96,6 +98,7 @@ class CallRejectView(APIView):
         )
 
         return Response({"success": True, "call_id": call.id})
+
 
 # 통화 수락 뷰
 class CallAcceptView(APIView):
@@ -120,6 +123,7 @@ class CallAcceptView(APIView):
 
         return Response({"success": True, "call_id": call.id})
 
+
 # 통화 부재중 뷰
 class CallMissedView(APIView):
     """
@@ -141,8 +145,6 @@ class CallMissedView(APIView):
         )
 
         return Response({"success": True, "call_id": call.id})
-
-
 
 
 # 통화 종료 뷰
