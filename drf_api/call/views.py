@@ -130,12 +130,12 @@ class CallMissedView(APIView):
     통화가 걸렸지만 30초 동안 수락하지 않아 부재중 처리
     """
     def post(self, request):
+        print("CallMissedView 호출됨")
         room_id = request.data.get("room_id")
         caller_id = request.data.get("caller_id")
         receiver = request.user
 
         caller = get_object_or_404(User, id=caller_id)
-        receiver = get_object_or_404(User, id=receiver)
 
         call = CallHistory.objects.create(
             caller=caller,
