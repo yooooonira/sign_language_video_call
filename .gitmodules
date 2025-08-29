@@ -1,0 +1,3 @@
+[submodule "AI_Language"]
+	path = AI_Language
+	url = https://github.com/shinjungwoon/AI_Language.git
