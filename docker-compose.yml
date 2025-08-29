@@ -103,7 +103,6 @@ services:
       - AI_Language/.env
     volumes:
       - ./AI_Language:/app/AI_Language
-      - ./AI_Language/ai_worker:/app/AI_Language
     depends_on:
       - ai
     restart: unless-stopped
