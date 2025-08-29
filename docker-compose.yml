@@ -98,9 +98,9 @@ services:
   ai_worker:
     build:
       context: ./AI_Language
-      dockerfile: ai_worker/Dockerfile
+      dockerfile: Dockerfile
     env_file:
-      - AI_Language/.env  
+      - AI_Language/.env
     volumes:
       - ./AI_Language:/app/AI_Language
       - ./AI_Language/ai_worker:/app/AI_Language
