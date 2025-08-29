@@ -104,10 +104,10 @@ services:
   
   ai_worker:
     build:
-      context: .
+      context: ./AI_Language
       dockerfile: ai_worker/Dockerfile
     env_file:
-      - ai_worker/.env  
+      - AI_Language/.env
     depends_on:
       - ai
     restart: always
