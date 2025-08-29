@@ -108,6 +108,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - AI_Language/.env
+    volumes:
+      - ./models/multi_hand_gesture_classifier.tflite:/ai/models/multi_hand_gesture_classifier.tflite
     depends_on:
       - ai
     restart: always
