@@ -71,4 +71,4 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
     except (WebSocketDisconnect, asyncio.TimeoutError):
         pass
     finally:
-        hub.remove(websocket) 
+        await hub.remove(websocket)
