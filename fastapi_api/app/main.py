@@ -1,10 +1,18 @@
 from fastapi import FastAPI
-from .websockets import router as ws_router
+from .websockets import router
+import logging
+
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
 
 @app.get("/ai/health")
 def health():
     return {"status": "ok"}
 
-app.include_router(ws_router)
+app.include_router(router)
+logging.info("FastAPI 컨테이너 실행됨 (8000)")

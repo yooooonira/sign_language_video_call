@@ -1,5 +1,11 @@
 from typing import Set, Dict, List, Optional
 from fastapi import WebSocket
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+logger = logging.getLogger(__name__)
+
 
 class Hub: #허브 
     def __init__(self) -> None:

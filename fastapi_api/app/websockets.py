@@ -2,6 +2,12 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from .state import hub  #허브에 등록용 
 import asyncio, json  
 
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 @router.websocket("/ai") # 클라이언트는 ws://localhost:8000/ai 로 연결. ai붙으면 허브로 들어감
