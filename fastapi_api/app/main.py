@@ -4,7 +4,9 @@ import logging
 
 
 logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+                    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+                    force=True,)  # uvicorn 기본 로그 덮기 
+
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -15,4 +17,4 @@ def health():
     return {"status": "ok"}
 
 app.include_router(router)
-logger.info("FastAPI 컨테이너 실행됨 (8000)")
+logger.info("FastAPI 컨테이너 실행됨 (8000)") #★
