@@ -15,4 +15,4 @@ def health():
     return {"status": "ok"}
 
 app.include_router(router)
-logging.info("FastAPI 컨테이너 실행됨 (8000)")
+logger.info("FastAPI 컨테이너 실행됨 (8000)")

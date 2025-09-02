@@ -1,7 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from .state import hub  #허브에 등록용 
 import asyncio, json  
-
 import logging
 
 logging.basicConfig(level=logging.INFO,
@@ -19,6 +18,7 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
 ):
     await websocket.accept() # 클라이언트의 WebSocket 연결 요청을 수락
     await hub.add(websocket, role=role, room=room) # 허브에 등록
+    logger.info("연결됨 role=%s room=%s", role, room or "(없음)")
 
     try:
         while True:
@@ -28,14 +28,15 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
                 break
 
             if "text" in message and message["text"] is not None: #받은거 처리 
-                print(f"[hub] recv text: {message['text'][:50]}...")
                 raw = message["text"] #원천 
+                logger.info("프런트에서 수신(raw): %s", raw)
 
                 # JSON이면 type 기반 라우팅
                 try:
                     data = json.loads(raw)
                 except Exception:
                     # JSON 아니면 같은 방 브로드캐스트(기존 동작 유지)
+                    logger.info("JSON 파싱 실패 -> 같은 방 브로드캐스트")
                     room_id = hub.room_of(websocket)
                     for client in list(hub.in_room(room_id)):
                         if client is not websocket:
@@ -48,6 +49,7 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
                 # 1) 프런트 -> AI 워커 : 좌표 전달
                 if mtype == "hand_landmarks":
                     payload = json.dumps(data)
+                    logger.info("프런트를 AI로 전달")
                     for client in list(hub.by_role_in_room("ai", room_id)):
                         if client is not websocket:
                             await client.send_text(payload)
@@ -56,6 +58,7 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
                 # 2) AI 워커 -> 프런트 : 자막 전달
                 if mtype == "ai_result":
                     payload = json.dumps(data)
+                    logger.info("번역을 프런트로 전달")
                     for client in list(hub.by_role_in_room("client", room_id)):
                         if client is not websocket:
                             await client.send_text(payload)
