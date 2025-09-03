@@ -96,114 +96,91 @@
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from .state import hub
-import asyncio, json, logging
+import asyncio, json, logging, time,uuid,hashlib
+from typing import Any, Dict, Optional
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+log = logging.getLogger("app.ws")
+
 
 def _peer(ws: WebSocket) -> str:
     try:
         return f"{ws.client.host}:{ws.client.port}"
     except Exception:
         return "unknown"
+def _hash_short(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()[:12]
+
+def _summarize_payload(raw: str, parsed: Dict[str, Any]) -> str:
+    """원천 메시지 요약"""
+    origin = parsed.get("text") or parsed.get("raw_text")
+    if origin:
+        return origin
+    return f"[keypoints len={len(raw)} hash={_hash_short(raw.encode())}]"    
 
 @router.websocket("/ai")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    token: str | None = Query(default=None),
-    role: str = Query(...),
-    room: str = Query(default="")
-):
-    # 연결 수락 전에도 최대한 정보 찍기
-    logger.info("WS connect attempt peer=%s role=%s room=%s token=%s",
-                _peer(websocket), role, room or "(없음)", "Y" if token else "N")
-    await websocket.accept()
-    await hub.add(websocket, role=role, room=room)
-    logger.info("연결됨 peer=%s role=%s room=%s", _peer(websocket), role, room or "(없음)")
+async def ai_ws(ws: WebSocket, token: str, role: str):
+    await ws.accept()
+    session_started = time.time()
+
+    room_id: Optional[str] = None
+    corr_id_seed: Optional[str] = None
 
     try:
-        logger.info("WS 루프 시작 peer=%s role=%s room=%s",
-                    _peer(websocket), role, hub.room_of(websocket) or "(없음)")
         while True:
-            message = await websocket.receive()
-            mtype = message.get("type")
-            logger.info("WS recv peer=%s type=%s keys=%s",
-                        _peer(websocket), mtype, list(message.keys()))
+            raw = await ws.receive_text()
+            t0 = time.time()
 
-            if mtype == "websocket.disconnect":
-                logger.info("WS -> websocket disconnect peer=%s", _peer(websocket))
-                break
-
-            if "bytes" in message and message["bytes"]:
-                logger.info("WS recv BYTES len=%d (무시)", len(message["bytes"]))
-                continue
-
-            raw = message.get("text")
-            if raw is None:
-                logger.info("WS recv empty text")
-                continue
-
-            logger.info("프런트 수신(raw len=%d head200=%r)", len(raw), raw[:200])
-
-            # JSON 라우팅
             try:
-                data = json.loads(raw)
+                msg = json.loads(raw)
             except Exception:
-                logger.exception("JSON 파싱 실패 -> 같은 방 브로드캐스트")
-                room_id = hub.room_of(websocket)
-                for client in list(hub.in_room(room_id)):
-                    if client is not websocket:
-                        await client.send_text(raw)
-                continue
+                msg = {"raw": raw}
 
-            mtype = data.get("type")
-            room_id = data.get("room_id") or hub.room_of(websocket)
+            # room_id / corr_id 생성
+            if room_id is None:
+                room_id = msg.get("room_id") or "unknown"
+                corr_id_seed = corr_id_seed or str(uuid.uuid4())
 
-            if mtype == "hand_landmarks":
-                payload = json.dumps(data)
-                logger.info("AI로 전달 시작 room=%s", room_id or "(없음)")
-                sent = 0
-                for client in hub.by_role_in_room("ai", room_id):
-                    if client is not websocket:
-                        try:
-                            await client.send_text(payload)
-                            sent += 1
-                        except Exception:
-                            logger.exception("AI로 전달 실패")
-                logger.info("AI로 전달 종료 receivers=%d", sent)
-                continue
+            corr_id = msg.get("corr_id") or corr_id_seed or str(uuid.uuid4())
 
-            if mtype == "ai_result":
-                payload = json.dumps(data)
-                logger.info("클라이언트로 전달 시작 room=%s", room_id or "(없음)")
-                sent = 0
-                for client in hub.by_role_in_room("client", room_id):
-                    if client is not websocket:
-                        try:
-                            await client.send_text(payload)
-                            sent += 1
-                        except Exception:
-                            logger.exception("클라이언트로 전달 실패")
-                logger.info("클라이언트로 전달 종료 receivers=%d", sent)
-                continue
+            # 1) 수신 직후 로그
+            origin = _summarize_payload(raw, msg)
+            log.info({
+                "event": "caption_rx",
+                "room_id": room_id,
+                "role": role,
+                "corr_id": corr_id,
+                "origin": origin,
+            })
 
-            # 기타는 브로드캐스트
-            payload = json.dumps(data)
-            logger.info("브로드캐스트 시작 room=%s", room_id or "(없음)")
-            sent = 0
-            for client in list(hub.in_room(room_id)):
-                if client is not websocket:
-                    try:
-                        await client.send_text(payload)
-                        sent += 1
-                    except Exception:
-                        logger.exception("브로드캐스트 전송 실패")
-            logger.info("브로드캐스트 종료 receivers=%d", sent)
+            # 2) 추론/번역 (현재는 에코)
+            # TODO: ai_worker 호출로 교체 필요
+            translated = origin
+            score = None
+            elapsed_ms = int((time.time() - t0) * 1000)
 
-    except (WebSocketDisconnect, asyncio.TimeoutError):
-        logger.info("WS 예외 종료 peer=%s", _peer(websocket))
-    except Exception:
-        logger.exception("WS 루프 오류")
-    finally:
-        await hub.remove(websocket)
-        logger.info("hub 완료 peer=%s", _peer(websocket))
+            # 3) 결과 로그
+            log.info({
+                "event": "caption",
+                "room_id": room_id,
+                "role": role,
+                "corr_id": corr_id,
+                "origin": origin,
+                "translated": translated,
+                "ms": elapsed_ms,
+                **({"score": score} if score is not None else {}),
+            })
+
+            # 4) 응답 전송
+            await ws.send_json({"type": "caption", "text": translated, "corr_id": corr_id})
+
+    except WebSocketDisconnect:
+        alive_ms = int((time.time() - session_started) * 1000)
+        log.info({
+            "event": "ws_disconnect",
+            "room_id": room_id,
+            "corr_id": corr_id_seed,
+            "alive_ms": alive_ms
+        })

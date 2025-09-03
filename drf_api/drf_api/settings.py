@@ -94,6 +94,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "drf_api.middleware.TranslateLogMiddleware",
     "django_prometheus.middleware.PrometheusBeforeMiddleware", #요청 시작 타이머
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
