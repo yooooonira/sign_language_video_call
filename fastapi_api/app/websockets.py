@@ -485,7 +485,7 @@ def _summarize_payload(raw: str, parsed: Dict[str, Any]) -> str:
     return f"[len={len(raw)} hash={_hash_short(raw.encode())}]"
 
 # ====== 메인 엔드포인트 ======
-@router.websocket("/ai")
+@router.websocket("/")
 async def ai_ws(
     ws: WebSocket,
     token: str = Query(...),
