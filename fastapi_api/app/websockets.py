@@ -112,6 +112,52 @@ ALLOWED_ORIGINS = {
 }
 ALLOWED_ROLES = {"user", "ai", "client"}
 
+# 엄격 모드: 브라우저(user/client)엔 Origin 필수
+WS_REQUIRE_ORIGIN = os.getenv("WS_REQUIRE_ORIGIN", "1") == "1"
+
+@router.websocket("/ai")
+async def ai_ws(
+    ws: WebSocket,
+    token: str = Query(...),
+    role: str = Query(...),
+    room: str = Query(default=""),
+):
+    await ws.accept()
+    start_ts = time.time()
+
+    origin_hdr = ws.headers.get("origin")
+    peer = f"{ws.client.host}:{ws.client.port}" if ws.client else "unknown"
+
+    # 역할 정규화
+    role = (role or "").lower()
+
+    # 1) 역할 검사
+    if role not in ALLOWED_ROLES:
+        log.warning({"event": "ws_reject", "reason": "role", "role": role, "peer": peer})
+        await ws.close(code=1008)
+        return
+
+    # 2) 토큰 검사
+    if token != AI_WS_TOKEN:
+        log.warning({"event": "ws_reject", "reason": "token", "peer": peer})
+        await ws.close(code=1008)
+        return
+
+    # 3) Origin 검사: 브라우저(user/client)만 엄격 적용
+    is_browser = role in {"user", "client"}
+    if WS_REQUIRE_ORIGIN and is_browser:
+        if not origin_hdr:
+            log.warning({"event": "ws_reject", "reason": "origin_missing", "peer": peer})
+            await ws.close(code=1008)
+            return
+        if ALLOWED_ORIGINS and origin_hdr not in ALLOWED_ORIGINS:
+            log.warning({"event": "ws_reject", "reason": "origin", "origin": origin_hdr, "peer": peer})
+            await ws.close(code=1008)
+            return
+
+    log.info({"event": "ws_accept", "origin": origin_hdr, "role": role, "room": room or None, "peer": peer})
+    # ... (이하 기존 로직 동일: coords_rx/caption 처리)
+
 # ====== 유틸 ======
 def _peer(ws: WebSocket) -> str:
     try:
