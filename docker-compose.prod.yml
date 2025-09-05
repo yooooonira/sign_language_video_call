@@ -10,8 +10,6 @@ services:
     restart: always
     env_file:
       - drf_api/.env
-    environment:
-      - DJANGO_SETTINGS_MODULE=drf_api.settings
     volumes:
       - /home/ec2-user/sign_language_video_call/static:/vol/web/static
       - /home/ec2-user/sign_language_video_call/media:/vol/web/media
