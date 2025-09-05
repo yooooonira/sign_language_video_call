@@ -12,14 +12,15 @@ services:
     env_file:
       - drf_api/.env
     environment:
-      - DJANGO_SETTINGS_MODULE=drf_api.settings
+      DJANGO_SETTINGS_MODULE: drf_api.settings
     volumes:
       - /home/ec2-user/sign_language_video_call/static:/vol/web/static
       - /home/ec2-user/sign_language_video_call/media:/vol/web/media
     depends_on:
       - db
       - redis
-    networks: #promethus가 접근할 수 있도록 공용 네트워크
+    # promethus가 접근할 수 있도록 공용 네트워크
+    networks:
       - default
       - monitoring_net
 
@@ -30,17 +31,19 @@ services:
       - postgres-data:/var/lib/postgresql/data
     env_file:
       - drf_api/.env
-    networks: #db metric을 가져올 거라면 필요 (필수 X)
+    # db metric을 가져올 거라면 필요 (필수 X)
+    networks:
       - default
 
-  redis: # <- 추가
+  # 추가된 Redis
+  redis:
     image: redis:7
     restart: always
     ports:
       - "6379:6379"
     networks:
       - default
-  
+
   ai:
     build:
       context: ./fastapi_api
@@ -49,7 +52,7 @@ services:
     ports:
       - "8001:8001"
     env_file:
-      - fastapi_api/.env 
+      - fastapi_api/.env
     networks:
       - default
 
@@ -65,7 +68,8 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus-data:/prometheus
-    networks: [monitoring_net]
+    networks:
+      - monitoring_net
 
   alertmanager:
     image: prom/alertmanager:v0.28.1
@@ -76,26 +80,27 @@ services:
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager-data:/alertmanager
-      - ./alertmanager/secrets:/etc/alertmanager/secrets:ro  
-    networks: [monitoring_net]
+      - ./alertmanager/secrets:/etc/alertmanager/secrets:ro
+    networks:
+      - monitoring_net
 
   grafana:
     image: grafana/grafana:10.4.5
     restart: always
     env_file:
-      - drf_api/.env 
+      - drf_api/.env
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SERVER_ROOT_URL=https://grafana.5range.site
-      - GF_AUTH_ANONYMOUS_ENABLED=false
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SERVER_ROOT_URL: https://grafana.5range.site
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-    networks: [monitoring_net]
+    networks:
+      - monitoring_net
     ports:
       - "127.0.0.1:3000:3000"
-  
 
 volumes:
   postgres-data:
@@ -104,7 +109,8 @@ volumes:
   grafana-data:
   alertmanager-data:
 
-networks: #네트워크 블록 추가
+# 네트워크 블록
+networks:
   default:
-  monitoring_net: #monitoring_net을 external 네크워크로 선언.
+  monitoring_net:
     external: true
