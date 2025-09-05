@@ -11,17 +11,14 @@ services:
     # 컨테이너 시작 시 자동으로 읽음(비밀번호, API키 등)
     env_file:
       - drf_api/.env
-
     environment:
       - DJANGO_SETTINGS_MODULE=drf_api.settings
     volumes:
       - /home/ec2-user/sign_language_video_call/static:/vol/web/static
       - /home/ec2-user/sign_language_video_call/media:/vol/web/media
-
     depends_on:
       - db
       - redis
-
     networks: #promethus가 접근할 수 있도록 공용 네트워크
       - default
       - monitoring_net
@@ -31,10 +28,8 @@ services:
     restart: always
     volumes:
       - postgres-data:/var/lib/postgresql/data
-
     env_file:
       - drf_api/.env
-
     networks: #db metric을 가져올 거라면 필요 (필수 X)
       - default
 
@@ -72,7 +67,6 @@ services:
       - prometheus-data:/prometheus
     networks: [monitoring_net]
 
-
   alertmanager:
     image: prom/alertmanager:v0.28.1
     restart: always
@@ -84,7 +78,6 @@ services:
       - alertmanager-data:/alertmanager
       - ./alertmanager/secrets:/etc/alertmanager/secrets:ro  
     networks: [monitoring_net]
-
 
   grafana:
     image: grafana/grafana:10.4.5
