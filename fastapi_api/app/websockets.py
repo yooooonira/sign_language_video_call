@@ -437,15 +437,16 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 import os, json, time, uuid, hashlib, logging
 from typing import Any, Dict, Optional, List
-
-# <<< ADDED: Hub 사용 (연결 등록/해제 및 룸 브로드캐스트)
+# Hub 사용 (연결 등록/해제 및 룸 브로드캐스트)
 from .state import hub
+from utils.decode_jwt import verify_supabase_jwt  # JWT 검증 함수 import
 
 router = APIRouter()
 log = logging.getLogger("app.ws")
 
 # ====== 설정 ======
 AI_WS_TOKEN = os.getenv("AI_WS_TOKEN", "change-me-dev")
+AI_WORKER_TOKEN = os.getenv("AI_WORKER_TOKEN", "worker-secret-token")  # AI 워커용 별도 토큰
 
 # 환경변수(ALLOWED_WS_ORIGINS)는 콤마로 구분된 목록.
 # 비교 오류를 막기 위해 모두 소문자 + 끝 슬래시 제거로 정규화합니다.
@@ -518,10 +519,29 @@ async def ai_ws(
         await ws.close(code=1008)
         return
 
-    if token != AI_WS_TOKEN:
-        log.warning({"event": "ws_reject", "reason": "token", "peer": peer})
-        await ws.close(code=1008)
-        return
+    # ★ 토큰 검증 로직 수정: 역할별로 다른 검증 방식 적용
+    user_info = None
+    if role in {"user", "client"}:  # 브라우저 클라이언트는 JWT 검증
+        user_info = verify_supabase_jwt (token)
+        if not user_info:
+            log.warning({
+                "event": "ws_reject", 
+                "reason": "invalid_jwt", 
+                "peer": peer,
+                "role": role
+            })
+            await ws.close(code=1008)
+            return
+    elif role == "ai":  # AI 워커는 별도 토큰 검증
+        if token != AI_WORKER_TOKEN:
+            log.warning({
+                "event": "ws_reject", 
+                "reason": "invalid_worker_token", 
+                "peer": peer,
+                "role": role
+            })
+            await ws.close(code=1008)
+            return
 
     # 브라우저 역할은 Origin 필수/허용목록 검사
     if WS_REQUIRE_ORIGIN and role in {"user", "client"}:
@@ -539,7 +559,7 @@ async def ai_ws(
             await ws.close(code=1008)
             return
 
-    # <<< ADDED: Hub에 현재 소켓 등록 (룸 매칭/중계 위해 필수)
+    # Hub에 현재 소켓 등록 (룸 매칭/중계 위해 필수)
     try:
         await hub.add(ws, role=role, room=room)  # room이 비어있으면 ai는 pool에 주차
     except Exception:
@@ -550,7 +570,8 @@ async def ai_ws(
         "origin": origin_hdr_raw,
         "role": role,
         "room": room or None,
-        "peer": peer
+        "peer": peer,
+        "user": user_info if user_info else None  # 사용자 정보 포함
     })
 
     # ---- 메시지 루프 --------------------------------------------------------
@@ -581,7 +602,7 @@ async def ai_ws(
                 hands_n = len(hands)
                 points = sum(len(h) for h in hands)
 
-                # ★ 같은 room의 user에게 브로드캐스트  # <<< ADDED
+                # ★ 같은 room의 user에게 브로드캐스트
                 for cli in hub.by_role_in_room("user", room_id or ""):
                     if cli is ws:  # 필요 시 자기 자신 제외
                         continue
@@ -596,7 +617,7 @@ async def ai_ws(
                     except Exception:
                         log.exception("coords -> user 브로드캐스트 실패")
 
-                # ★ 같은 room의 ai(워커)에게도 중계  # <<< ADDED
+                # ★ 같은 room의 ai(워커)에게도 중계
                 for worker in hub.by_role_in_room("ai", room_id or ""):
                     if worker is ws:
                         continue
@@ -650,7 +671,7 @@ async def ai_ws(
                     log.exception("caption 전송 실패")
                 continue
 
-            # ----- 워커 결과 수신(ai_result) → 같은 room의 user에게 전달  # <<< ADDED
+            # ----- 워커 결과 수신(ai_result) → 같은 room의 user에게 전달
             if msg.get("type") == "ai_result":
                 for cli in hub.by_role_in_room("user", room_id or ""):
                     try:
@@ -722,7 +743,7 @@ async def ai_ws(
             "alive_ms": alive_ms
         })
     finally:
-        # <<< ADDED: 연결 종료 시 Hub에서 제거
+        # 연결 종료 시 Hub에서 제거
         try:
             await hub.remove(ws)
         except Exception:
