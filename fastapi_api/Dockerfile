@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 libgl1 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+COPY ./requirements.txt /fastapp/requirements.txt
+RUN pip install --no-cache-dir -r /fastapp/requirements.txt
 
 COPY ./app ./app
 COPY ./AI_Language ./AI_Language
