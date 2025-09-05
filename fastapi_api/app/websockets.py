@@ -1,750 +1,92 @@
-# from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-# import os, json, time, uuid, hashlib, logging
-# from typing import Any, Dict, Optional, List
-
-# router = APIRouter()
-# log = logging.getLogger("app.ws")
-
-# # ====== 설정 ======
-# AI_WS_TOKEN = os.getenv("AI_WS_TOKEN", "change-me-dev")
-# ALLOWED_ORIGINS = {
-#     o.strip() for o in os.getenv(
-#         "ALLOWED_WS_ORIGINS",
-#         "https://sign-language-video-call-frontend.vercel.app,https://5range.site,https://www.5range.site"
-#     ).split(",")
-#     if o.strip()
-# }
-# ALLOWED_ROLES = {"user", "ai", "client"}
-
-# # 엄격 모드: 브라우저(user/client)엔 Origin 필수
-# WS_REQUIRE_ORIGIN = os.getenv("WS_REQUIRE_ORIGIN", "1") == "1"
-
-# @router.websocket("/ai")
-# async def ai_ws(
-#     ws: WebSocket,
-#     token: str = Query(...),
-#     role: str = Query(...),
-#     room: str = Query(default=""),
-# ):
-#     await ws.accept()
-#     start_ts = time.time()
-
-#     origin_hdr = ws.headers.get("origin")
-#     peer = f"{ws.client.host}:{ws.client.port}" if ws.client else "unknown"
-
-#     # 역할 정규화
-#     role = (role or "").lower()
-
-#     # 1) 역할 검사
-#     if role not in ALLOWED_ROLES:
-#         log.warning({"event": "ws_reject", "reason": "role", "role": role, "peer": peer})
-#         await ws.close(code=1008)
-#         return
-
-#     # 2) 토큰 검사
-#     if token != AI_WS_TOKEN:
-#         log.warning({"event": "ws_reject", "reason": "token", "peer": peer})
-#         await ws.close(code=1008)
-#         return
-
-#     # 3) Origin 검사: 브라우저(user/client)만 엄격 적용
-#     is_browser = role in {"user", "client"}
-#     if WS_REQUIRE_ORIGIN and is_browser:
-#         if not origin_hdr:
-#             log.warning({"event": "ws_reject", "reason": "origin_missing", "peer": peer})
-#             await ws.close(code=1008)
-#             return
-#         if ALLOWED_ORIGINS and origin_hdr not in ALLOWED_ORIGINS:
-#             log.warning({"event": "ws_reject", "reason": "origin", "origin": origin_hdr, "peer": peer})
-#             await ws.close(code=1008)
-#             return
-
-#     log.info({"event": "ws_accept", "origin": origin_hdr, "role": role, "room": room or None, "peer": peer})
-#     # ... (이하 기존 로직 동일: coords_rx/caption 처리)
-
-# # ====== 유틸 ======
-# def _peer(ws: WebSocket) -> str:
-#     try:
-#         return f"{ws.client.host}:{ws.client.port}"
-#     except Exception:
-#         return "unknown"
-
-# def _hash_short(b: bytes) -> str:
-#     return hashlib.sha256(b).hexdigest()[:12]
-
-# def _summarize_payload(raw: str, parsed: Dict[str, Any]) -> str:
-#     """텍스트가 있으면 텍스트, 없으면 좌표 페이로드를 짧게 요약"""
-#     origin = parsed.get("text") or parsed.get("raw_text")
-#     if origin:
-#         return origin
-#     return f"[len={len(raw)} hash={_hash_short(raw.encode())}]"
-
-# # ====== 메인 엔드포인트 ======
-# @router.websocket("/ai")
-# async def ai_ws(
-#     ws: WebSocket,
-#     token: str = Query(...),
-#     role: str = Query(...),
-#     room: str = Query(default=""),
-# ):
-#     """
-#     클라이언트 → 서버:
-#       - 텍스트 에코: {"text": "...", "room_id": "...", "corr_id": "..."}
-#       - 좌표 전송 : {"type":"coords","hands":[[{x,y,z}*21],...],"room_id":"...","corr_id":"...","ts":...}
-
-#     서버 → 클라이언트:
-#       - 좌표 ACK : {"type":"coords_ack","corr_id":"...","hands":N,"count":POINTS}
-#       - 캡션     : {"type":"caption","text":"...","corr_id":"..."}
-#     """
-#     # 먼저 수락 (검증 후 거절 시 1008로 닫음)
-#     await ws.accept()
-#     start_ts = time.time()
-
-#     origin_hdr = ws.headers.get("origin")
-#     if ALLOWED_ORIGINS and origin_hdr not in ALLOWED_ORIGINS:
-#         log.warning({"event": "ws_reject", "reason": "origin", "origin": origin_hdr, "peer": _peer(ws)})
-#         await ws.close(code=1008)
-#         return
-#     if role not in ALLOWED_ROLES:
-#         log.warning({"event": "ws_reject", "reason": "role", "role": role, "peer": _peer(ws)})
-#         await ws.close(code=1008)
-#         return
-#     if token != AI_WS_TOKEN:
-#         log.warning({"event": "ws_reject", "reason": "token", "peer": _peer(ws)})
-#         await ws.close(code=1008)
-#         return
-
-#     log.info({"event": "ws_accept", "origin": origin_hdr, "role": role, "room": room or None, "peer": _peer(ws)})
-
-#     room_id: Optional[str] = room or None
-#     corr_seed: Optional[str] = None
-
-#     try:
-#         while True:
-#             raw = await ws.receive_text()
-#             t0 = time.time()
-
-#             # JSON 파싱
-#             try:
-#                 msg = json.loads(raw)
-#             except Exception:
-#                 msg = {"raw": raw}
-
-#             # room/corr 보정
-#             if room_id is None:
-#                 room_id = msg.get("room_id") or "unknown"
-#             if corr_seed is None:
-#                 corr_seed = msg.get("corr_id") or str(uuid.uuid4())
-#             corr_id = msg.get("corr_id") or corr_seed
-
-#             # ---- 좌표 수신 경로 -------------------------------------------------
-#             if msg.get("type") == "coords":
-#                 hands: List[List[Dict[str, float]]] = msg.get("hands", [])
-#                 hands_n = len(hands)
-#                 points = sum(len(h) for h in hands)
-
-#                 # 수신 로그
-#                 log.info({
-#                     "event": "coords_rx",
-#                     "room_id": room_id,
-#                     "role": role,
-#                     "corr_id": corr_id,
-#                     "hands": hands_n,
-#                     "points": points,
-#                 })
-
-#                 # ACK 회신 (브라우저 콘솔에서 수신 확인용)
-#                 await ws.send_json({
-#                     "type": "coords_ack",
-#                     "corr_id": corr_id,
-#                     "hands": hands_n,
-#                     "count": points
-#                 })
-
-#                 # (검증용) 아주 단순한 캡션도 같이 내려서 DOM 표시까지 즉시 확인
-#                 # 실제 수어 인식 모델 연결 전까지만 사용하세요.
-#                 caption_text = f"좌표 수신: hands={hands_n}, points={points}"
-#                 elapsed_ms = int((time.time() - t0) * 1000)
-#                 log.info({
-#                     "event": "caption",
-#                     "room_id": room_id,
-#                     "role": role,
-#                     "corr_id": corr_id,
-#                     "origin": "[coords]",
-#                     "translated": caption_text,
-#                     "ms": elapsed_ms,
-#                 })
-#                 await ws.send_json({"type": "caption", "text": caption_text, "corr_id": corr_id})
-#                 continue
-
-#             # ---- 텍스트 에코 경로 -----------------------------------------------
-#             if "text" in msg and msg["text"] is not None:
-#                 origin_txt = msg["text"]
-#                 log.info({
-#                     "event": "caption_rx",
-#                     "room_id": room_id,
-#                     "role": role,
-#                     "corr_id": corr_id,
-#                     "origin": origin_txt,
-#                 })
-#                 # (현재는 에코)
-#                 translated = origin_txt
-#                 elapsed_ms = int((time.time() - t0) * 1000)
-#                 log.info({
-#                     "event": "caption",
-#                     "room_id": room_id,
-#                     "role": role,
-#                     "corr_id": corr_id,
-#                     "origin": origin_txt,
-#                     "translated": translated,
-#                     "ms": elapsed_ms,
-#                 })
-#                 await ws.send_json({"type": "caption", "text": translated, "corr_id": corr_id})
-#                 continue
-
-#             # ---- 그 외 미처리 ---------------------------------------------------
-#             log.info({
-#                 "event": "unhandled",
-#                 "room_id": room_id,
-#                 "role": role,
-#                 "corr_id": corr_id,
-#                 "keys": list(msg.keys())
-#             })
-
-#     except WebSocketDisconnect:
-#         alive_ms = int((time.time() - start_ts) * 1000)
-#         log.info({
-#             "event": "ws_disconnect",
-#             "room_id": room_id,
-#             "corr_id": corr_seed,
-#             "alive_ms": alive_ms
-#         })
-
-
-
-
-# from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-# import os, json, time, uuid, hashlib, logging
-# from typing import Any, Dict, Optional, List
-
-# router = APIRouter()
-# log = logging.getLogger("app.ws")
-
-# # ====== 설정 ======
-# AI_WS_TOKEN = os.getenv("AI_WS_TOKEN", "change-me-dev")
-
-# # 환경변수(ALLOWED_WS_ORIGINS)는 콤마로 구분된 목록.
-# # 비교 오류를 막기 위해 모두 소문자 + 끝 슬래시 제거로 정규화합니다.
-# def _normalize_origin(s: Optional[str]) -> Optional[str]:
-#     if not s:
-#         return None
-#     return s.strip().rstrip("/").lower()
-
-# ALLOWED_ORIGINS_RAW = os.getenv(
-#     "ALLOWED_WS_ORIGINS",
-#     "https://sign-language-video-call-frontend.vercel.app,https://5range.site,https://www.5range.site",
-# )
-# ALLOWED_ORIGINS: set[str] = {
-#     o for o in (_normalize_origin(x) for x in ALLOWED_ORIGINS_RAW.split(",")) if o
-# }
-
-# ALLOWED_ROLES = {"user", "ai", "client"}
-
-# # 브라우저(user/client) 역할에만 Origin 강제 (기본 1=켜짐)
-# WS_REQUIRE_ORIGIN = os.getenv("WS_REQUIRE_ORIGIN", "1") == "1"
-
-# # ====== 유틸 ======
-# def _peer(ws: WebSocket) -> str:
-#     try:
-#         return f"{ws.client.host}:{ws.client.port}"
-#     except Exception:
-#         return "unknown"
-
-# def _hash_short(b: bytes) -> str:
-#     return hashlib.sha256(b).hexdigest()[:12]
-
-# def _summarize_payload(raw: str, parsed: Dict[str, Any]) -> str:
-#     """텍스트가 있으면 텍스트, 없으면 페이로드 길이/해시로 요약"""
-#     origin = parsed.get("text") or parsed.get("raw_text")
-#     if origin:
-#         return origin
-#     return f"[len={len(raw)} hash={_hash_short(raw.encode())}]"
-
-# # ====== 메인 엔드포인트 ======
-# @router.websocket("/ai")
-# async def ai_ws(
-#     ws: WebSocket,
-#     token: str = Query(...),
-#     role: str = Query(...),
-#     room: str = Query(default=""),
-# ):
-#     """
-#     클라이언트 → 서버:
-#       - 텍스트: {"text": "...", "room_id": "...", "corr_id": "..."}
-#       - 좌표  : {"type":"coords","hands":[[{x,y,z}*21],...],"room_id":"...","corr_id":"...","ts":...}
-
-#     서버 → 클라이언트:
-#       - 좌표 ACK : {"type":"coords_ack","corr_id":"...","hands":N,"count":POINTS}
-#       - 캡션     : {"type":"caption","text":"...","corr_id":"..."}
-#     """
-#     # 선수락 → 검증 실패 시 1008로 종료
-#     await ws.accept()
-#     start_ts = time.time()
-#     peer = _peer(ws)
-
-#     # 헤더/쿼리 정규화
-#     origin_hdr_raw = ws.headers.get("origin")
-#     origin_hdr = _normalize_origin(origin_hdr_raw)
-#     role = (role or "").lower()
-
-#     # ---- 검증 ---------------------------------------------------------------
-#     if role not in ALLOWED_ROLES:
-#         log.warning({"event": "ws_reject", "reason": "role", "role": role, "peer": peer})
-#         await ws.close(code=1008)
-#         return
-
-#     if token != AI_WS_TOKEN:
-#         log.warning({"event": "ws_reject", "reason": "token", "peer": peer})
-#         await ws.close(code=1008)
-#         return
-
-#     # 브라우저 역할은 Origin 필수/허용목록 검사
-#     if WS_REQUIRE_ORIGIN and role in {"user", "client"}:
-#         if not origin_hdr:
-#             log.warning({"event": "ws_reject", "reason": "origin_missing", "peer": peer})
-#             await ws.close(code=1008)
-#             return
-#         if ALLOWED_ORIGINS and origin_hdr not in ALLOWED_ORIGINS:
-#             log.warning({
-#                 "event": "ws_reject",
-#                 "reason": "origin",
-#                 "origin": origin_hdr_raw,   # 원본 표시(디버깅용)
-#                 "peer": peer
-#             })
-#             await ws.close(code=1008)
-#             return
-
-#     log.info({
-#         "event": "ws_accept",
-#         "origin": origin_hdr_raw,
-#         "role": role,
-#         "room": room or None,
-#         "peer": peer
-#     })
-
-#     # ---- 메시지 루프 --------------------------------------------------------
-#     room_id: Optional[str] = room or None
-#     corr_seed: Optional[str] = None
-
-#     try:
-#         while True:
-#             raw = await ws.receive_text()
-#             t0 = time.time()
-
-#             # JSON 파싱
-#             try:
-#                 msg = json.loads(raw)
-#             except Exception:
-#                 msg = {"raw_text": raw}
-
-#             # room/corr 보정
-#             if room_id is None:
-#                 room_id = msg.get("room_id") or "unknown"
-#             if corr_seed is None:
-#                 corr_seed = msg.get("corr_id") or str(uuid.uuid4())
-#             corr_id = msg.get("corr_id") or corr_seed
-
-#             # 좌표 수신
-#             if msg.get("type") == "coords":
-#                 hands: List[List[Dict[str, float]]] = msg.get("hands", [])
-#                 hands_n = len(hands)
-#                 points = sum(len(h) for h in hands)
-
-#                 log.info({
-#                     "event": "coords_rx",
-#                     "room_id": room_id,
-#                     "role": role,
-#                     "corr_id": corr_id,
-#                     "hands": hands_n,
-#                     "points": points,
-#                 })
-
-#                 # ACK
-#                 await ws.send_json({
-#                     "type": "coords_ack",
-#                     "corr_id": corr_id,
-#                     "hands": hands_n,
-#                     "count": points
-#                 })
-
-#                 # (검증용) 간단 캡션
-#                 caption_text = f"좌표 수신: hands={hands_n}, points={points}"
-#                 elapsed_ms = int((time.time() - t0) * 1000)
-#                 log.info({
-#                     "event": "caption",
-#                     "room_id": room_id,
-#                     "role": role,
-#                     "corr_id": corr_id,
-#                     "origin": "[coords]",
-#                     "translated": caption_text,
-#                     "ms": elapsed_ms,
-#                 })
-#                 await ws.send_json({"type": "caption", "text": caption_text, "corr_id": corr_id})
-#                 continue
-
-#             # 텍스트 에코
-#             if "text" in msg and msg["text"] is not None:
-#                 origin_txt = msg["text"]
-#                 log.info({
-#                     "event": "caption_rx",
-#                     "room_id": room_id,
-#                     "role": role,
-#                     "corr_id": corr_id,
-#                     "origin": origin_txt,
-#                 })
-#                 translated = origin_txt  # 현재는 에코
-#                 elapsed_ms = int((time.time() - t0) * 1000)
-#                 log.info({
-#                     "event": "caption",
-#                     "room_id": room_id,
-#                     "role": role,
-#                     "corr_id": corr_id,
-#                     "origin": origin_txt,
-#                     "translated": translated,
-#                     "ms": elapsed_ms,
-#                 })
-#                 await ws.send_json({"type": "caption", "text": translated, "corr_id": corr_id})
-#                 continue
-
-#             # 미처리
-#             log.info({
-#                 "event": "unhandled",
-#                 "room_id": room_id,
-#                 "role": role,
-#                 "corr_id": corr_id,
-#                 "keys": list(msg.keys())
-#             })
-
-#     except WebSocketDisconnect:
-#         alive_ms = int((time.time() - start_ts) * 1000)
-#         log.info({
-#             "event": "ws_disconnect",
-#             "room_id": room_id,
-#             "corr_id": corr_seed,
-#             "alive_ms": alive_ms
-#         })
-
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-import os, json, time, uuid, hashlib, logging
-from typing import Any, Dict, Optional, List
-# Hub 사용 (연결 등록/해제 및 룸 브로드캐스트)
-from .state import hub
-from utils.decode_jwt import verify_supabase_jwt  # JWT 검증 함수 import
+from .state import hub  #허브에 등록용 
+import asyncio, json, logging, sys
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
-log = logging.getLogger("app.ws")
 
-# ====== 설정 ======
-AI_WS_TOKEN = os.getenv("AI_WS_TOKEN", "change-me-dev")
-AI_WORKER_TOKEN = os.getenv("AI_WORKER_TOKEN", "worker-secret-token")  # AI 워커용 별도 토큰
-
-# 환경변수(ALLOWED_WS_ORIGINS)는 콤마로 구분된 목록.
-# 비교 오류를 막기 위해 모두 소문자 + 끝 슬래시 제거로 정규화합니다.
-def _normalize_origin(s: Optional[str]) -> Optional[str]:
-    if not s:
-        return None
-    return s.strip().rstrip("/").lower()
-
-ALLOWED_ORIGINS_RAW = os.getenv(
-    "ALLOWED_WS_ORIGINS",
-    "https://sign-language-video-call-frontend.vercel.app,https://5range.site,https://www.5range.site",
-)
-ALLOWED_ORIGINS: set[str] = {
-    o for o in (_normalize_origin(x) for x in ALLOWED_ORIGINS_RAW.split(",")) if o
-}
-
-ALLOWED_ROLES = {"user", "ai", "client"}
-
-# 브라우저(user/client) 역할에만 Origin 강제 (기본 1=켜짐)
-WS_REQUIRE_ORIGIN = os.getenv("WS_REQUIRE_ORIGIN", "1") == "1"
-
-# ====== 유틸 ======
-def _peer(ws: WebSocket) -> str:
-    try:
-        return f"{ws.client.host}:{ws.client.port}"
-    except Exception:
-        return "unknown"
-
-def _hash_short(b: bytes) -> str:
-    return hashlib.sha256(b).hexdigest()[:12]
-
-def _summarize_payload(raw: str, parsed: Dict[str, Any]) -> str:
-    """텍스트가 있으면 텍스트, 없으면 페이로드 길이/해시로 요약"""
-    origin = parsed.get("text") or parsed.get("raw_text")
-    if origin:
-        return origin
-    return f"[len={len(raw)} hash={_hash_short(raw.encode())}]"
-
-# ====== 메인 엔드포인트 ======
-@router.websocket("/ai")
-async def ai_ws(
-    ws: WebSocket,
-    token: str = Query(...),
-    role: str = Query(...),
-    room: str = Query(default=""),
+@router.websocket("/ai") # 클라이언트는 ws://localhost:8000/ai 로 연결. ai붙으면 허브로 들어감
+async def websocket_endpoint(  # 프런트에서 값가져오기
+    websocket: WebSocket,
+    token: str | None = Query(default=None),
+    role: str =  Query(...),
+    room: str = Query(default="")
 ):
-    """
-    클라이언트 → 서버:
-      - 텍스트: {"text": "...", "room_id": "...", "corr_id": "..."}
-      - 좌표  : {"type":"coords","hands":[[{x,y,z}*21],...],"room_id":"...","corr_id":"...","ts":...}
-
-    서버 → 클라이언트:
-      - 좌표 ACK : {"type":"coords_ack","corr_id":"...","hands":N,"count":POINTS}
-      - 캡션     : {"type":"caption","text":"...","corr_id":"..."}
-      - 중계     : coords/ai_result를 같은 room의 user/ai 에 전달
-    """
-    # 선수락 → 검증 실패 시 1008로 종료
-    await ws.accept()
-    start_ts = time.time()
-    peer = _peer(ws)
-
-    # 헤더/쿼리 정규화
-    origin_hdr_raw = ws.headers.get("origin")
-    origin_hdr = _normalize_origin(origin_hdr_raw)
-    role = (role or "").lower()
-
-    # ---- 검증 ---------------------------------------------------------------
-    if role not in ALLOWED_ROLES:
-        log.warning({"event": "ws_reject", "reason": "role", "role": role, "peer": peer})
-        await ws.close(code=1008)
-        return
-
-    # ★ 토큰 검증 로직 수정: 역할별로 다른 검증 방식 적용
-    user_info = None
-    if role in {"user", "client"}:  # 브라우저 클라이언트는 JWT 검증
-        user_info = verify_supabase_jwt (token)
-        if not user_info:
-            log.warning({
-                "event": "ws_reject", 
-                "reason": "invalid_jwt", 
-                "peer": peer,
-                "role": role
-            })
-            await ws.close(code=1008)
-            return
-    elif role == "ai":  # AI 워커는 별도 토큰 검증
-        if token != AI_WORKER_TOKEN:
-            log.warning({
-                "event": "ws_reject", 
-                "reason": "invalid_worker_token", 
-                "peer": peer,
-                "role": role
-            })
-            await ws.close(code=1008)
-            return
-
-    # 브라우저 역할은 Origin 필수/허용목록 검사
-    if WS_REQUIRE_ORIGIN and role in {"user", "client"}:
-        if not origin_hdr:
-            log.warning({"event": "ws_reject", "reason": "origin_missing", "peer": peer})
-            await ws.close(code=1008)
-            return
-        if ALLOWED_ORIGINS and origin_hdr not in ALLOWED_ORIGINS:
-            log.warning({
-                "event": "ws_reject",
-                "reason": "origin",
-                "origin": origin_hdr_raw,   # 원본 표시(디버깅용)
-                "peer": peer
-            })
-            await ws.close(code=1008)
-            return
-
-    # Hub에 현재 소켓 등록 (룸 매칭/중계 위해 필수)
-    try:
-        await hub.add(ws, role=role, room=room)  # room이 비어있으면 ai는 pool에 주차
-    except Exception:
-        log.exception("hub.add 실패")
-
-    log.info({
-        "event": "ws_accept",
-        "origin": origin_hdr_raw,
-        "role": role,
-        "room": room or None,
-        "peer": peer,
-        "user": user_info if user_info else None  # 사용자 정보 포함
-    })
-
-    # ---- 메시지 루프 --------------------------------------------------------
-    room_id: Optional[str] = room or None
-    corr_seed: Optional[str] = None
+    await websocket.accept() # 클라이언트의 WebSocket 연결 요청을 수락
+    await hub.add(websocket, role=role, room=room) # 허브에 등록
+    logger.info("연결됨 role=%s room=%s", role, room or "(없음)")
 
     try:
         while True:
-            raw = await ws.receive_text()
-            t0 = time.time()
+            message = await websocket.receive() #프런트에서 받고 
 
-            # JSON 파싱
-            try:
-                msg = json.loads(raw)
-            except Exception:
-                msg = {"raw_text": raw}
+            if message.get("type") == "websocket.disconnect":#못받으면 break 나가기
+                break
 
-            # room/corr 보정
-            if room_id is None:
-                room_id = msg.get("room_id") or "unknown"
-            if corr_seed is None:
-                corr_seed = msg.get("corr_id") or str(uuid.uuid4())
-            corr_id = msg.get("corr_id") or corr_seed
+            if "text" in message and message["text"] is not None: #받은거 처리 
+                raw = message["text"] #원천 
+                logger.info("프런트에서 수신(raw): %s", raw[:200])
 
-            # ----- 좌표 수신 (중계 + ACK + 로그)
-            if msg.get("type") == "coords":
-                hands: List[List[Dict[str, float]]] = msg.get("hands", [])
-                hands_n = len(hands)
-                points = sum(len(h) for h in hands)
-
-                # ★ 같은 room의 user에게 브로드캐스트
-                for cli in hub.by_role_in_room("user", room_id or ""):
-                    if cli is ws:  # 필요 시 자기 자신 제외
-                        continue
-                    try:
-                        await cli.send_json({
-                            "type": "coords",
-                            "corr_id": corr_id,
-                            "room_id": room_id,
-                            "hands": hands,
-                            "frame_id": msg.get("frame_id"),
-                        })
-                    except Exception:
-                        log.exception("coords -> user 브로드캐스트 실패")
-
-                # ★ 같은 room의 ai(워커)에게도 중계
-                for worker in hub.by_role_in_room("ai", room_id or ""):
-                    if worker is ws:
-                        continue
-                    try:
-                        await worker.send_json({
-                            "type": "coords",
-                            "corr_id": corr_id,
-                            "room_id": room_id,
-                            "hands": hands,
-                            "frame_id": msg.get("frame_id"),
-                        })
-                    except Exception:
-                        log.exception("coords -> ai 브로드캐스트 실패")
-
-                # 수신 로그
-                log.info({
-                    "event": "coords_rx",
-                    "room_id": room_id,
-                    "role": role,
-                    "corr_id": corr_id,
-                    "hands": hands_n,
-                    "points": points,
-                })
-
-                # ACK
+                # JSON이면 type 기반 라우팅
                 try:
-                    await ws.send_json({
-                        "type": "coords_ack",
-                        "corr_id": corr_id,
-                        "hands": hands_n,
-                        "count": points
-                    })
+                    data = json.loads(raw)
                 except Exception:
-                    log.exception("coords_ack 전송 실패")
+                    # JSON 아니면 같은 방 브로드캐스트(기존 동작 유지)
+                    logger.info("JSON 파싱 실패 -> 같은 방 브로드캐스트")
+                    room_id = hub.room_of(websocket)
+                    for client in list(hub.in_room(room_id)):
+                        if client is not websocket:
+                            await client.send_text(raw)
+                    continue
 
-                # (검증용) 간단 캡션
-                caption_text = f"좌표 수신: hands={hands_n}, points={points}"
-                elapsed_ms = int((time.time() - t0) * 1000)
-                log.info({
-                    "event": "caption",
-                    "room_id": room_id,
-                    "role": role,
-                    "corr_id": corr_id,
-                    "origin": "[coords]",
-                    "translated": caption_text,
-                    "ms": elapsed_ms,
-                })
-                try:
-                    await ws.send_json({"type": "caption", "text": caption_text, "corr_id": corr_id})
-                except Exception:
-                    log.exception("caption 전송 실패")
-                continue
+                mtype = data.get("type")
+                room_id = data.get("room_id") or hub.room_of(websocket)
 
-            # ----- 워커 결과 수신(ai_result) → 같은 room의 user에게 전달
-            if msg.get("type") == "ai_result":
-                for cli in hub.by_role_in_room("user", room_id or ""):
+                # 1) 프런트 -> AI 워커 : 좌표 전달
+                if mtype == "hand_landmarks":
                     try:
-                        await cli.send_json({
+                        from app import main  # 순환 import 방지: 런타임에 불러오기
+                        pred_idx, probs = main.predict_landmarks(data.get("data"))
+
+                        # 클라이언트에 ai_result 전달
+                        result = {
                             "type": "ai_result",
-                            "corr_id": corr_id,
-                            "room_id": room_id,
-                            "text": msg.get("text"),
-                            "score": msg.get("score"),
-                            "frame_id": msg.get("frame_id"),
-                        })
+                            "ok": True, #추론 상태
+                            "pred_idx": pred_idx, #모델이 예측한 클래스 인덱스 (정수).
+                            "probs": probs #모델 출력의 전체 확률 분포 (리스트).
+                        }
+                        payload = json.dumps(result)
+                        logger.info("추론 결과를 프런트로 전달")
+                        for client in list(hub.by_role_in_room("client", room_id)):
+                            await client.send_text(payload)
+
                     except Exception:
-                        log.exception("ai_result -> user 전달 실패")
+                        logger.exception("infer_error")
+                        await websocket.send_text(json.dumps({
+                            "type": "ai_result",
+                            "ok": False,
+                            "error": "infer_error"
+                        }))
+                    continue
 
-                # 로그 남기기
-                log.info({
-                    "event": "caption",
-                    "room_id": room_id,
-                    "role": role,
-                    "corr_id": corr_id,
-                    "origin": "[ai_result]",
-                    "translated": msg.get("text"),
-                    "ms": int((time.time() - t0) * 1000),
-                })
+                # 2) AI 워커 -> 프런트 : 자막 전달
+                if mtype == "ai_result":
+                    payload = json.dumps(data)
+                    logger.info("번역을 프런트로 전달")
+                    for client in list(hub.by_role_in_room("client", room_id)):
+                        if client is not websocket:
+                            await client.send_text(payload)
+                    continue
+
+                # 3) 그 외 텍스트는 같은 방 브로드캐스트(기존 동작 유지)
+                payload = json.dumps(data)
+                for client in list(hub.in_room(room_id)):
+                    if client is not websocket:
+                        await client.send_text(payload)
                 continue
 
-            # ----- 텍스트 에코(현상 유지)
-            if "text" in msg and msg["text"] is not None:
-                origin_txt = msg["text"]
-                log.info({
-                    "event": "caption_rx",
-                    "room_id": room_id,
-                    "role": role,
-                    "corr_id": corr_id,
-                    "origin": origin_txt,
-                })
-                translated = origin_txt  # 현재는 에코
-                elapsed_ms = int((time.time() - t0) * 1000)
-                log.info({
-                    "event": "caption",
-                    "room_id": room_id,
-                    "role": role,
-                    "corr_id": corr_id,
-                    "origin": origin_txt,
-                    "translated": translated,
-                    "ms": elapsed_ms,
-                })
-                try:
-                    await ws.send_json({"type": "caption", "text": translated, "corr_id": corr_id})
-                except Exception:
-                    log.exception("caption(에코) 전송 실패")
-                continue
-
-            # 미처리
-            log.info({
-                "event": "unhandled",
-                "room_id": room_id,
-                "role": role,
-                "corr_id": corr_id,
-                "keys": list(msg.keys())
-            })
-
-    except WebSocketDisconnect:
-        alive_ms = int((time.time() - start_ts) * 1000)
-        log.info({
-            "event": "ws_disconnect",
-            "room_id": room_id,
-            "corr_id": corr_seed,
-            "alive_ms": alive_ms
-        })
+    except (WebSocketDisconnect, asyncio.TimeoutError):
+        pass
     finally:
-        # 연결 종료 시 Hub에서 제거
-        try:
-            await hub.remove(ws)
-        except Exception:
-            log.exception("hub.remove 실패")
+	    await hub.remove(websocket)

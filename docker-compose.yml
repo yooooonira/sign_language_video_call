@@ -95,20 +95,6 @@ services:
       - PYTHONUNBUFFERED=1
 
 
-  ai_worker:
-    build:
-      context: ./AI_Language
-      dockerfile: Dockerfile
-    env_file:
-      - AI_Language/.env
-    volumes:
-      - ./AI_Language:/app/AI_Language
-    depends_on:
-      - ai
-    restart: unless-stopped
-
-
-
 volumes:
   dev-db-data:
   grafana-storage:    # 그라파나 데이터 저장 

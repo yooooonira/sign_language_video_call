@@ -1,6 +1,9 @@
 import jwt
 import os
+import logging
 from typing import Optional, Dict
+
+log = logging.getLogger(__name__)
 
 def verify_supabase_jwt(token: str) -> Optional[Dict[str, str]]:
     """Supabase JWT 토큰을 검증하고 사용자 정보를 반환"""

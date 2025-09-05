@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Env files
+.env
+fastapi_api/.env
+
+# Data / Models (원하면 LFS로 관리)
+AI_Language/dataset/
+AI_Language/models/*.h5
+AI_Language/models/*.pt
+AI_Language/models/*.onnx
+*.mp4
+*.mov
+*.zip
+!AI_Language/models/*.tflite
+
+# VS Code
+.vscode/
+
+# Documents / artifacts
+*.ipynb
+*.pptx
+*.avi
