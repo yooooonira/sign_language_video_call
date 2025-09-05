@@ -35,6 +35,7 @@ class TranslateLogMiddleware(BaseHTTPMiddleware):
         except Exception:
             pass
 
+
         request.app.logger.info({
             "event": "translate",
             "path": request.url.path,
