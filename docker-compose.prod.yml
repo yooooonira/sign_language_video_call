@@ -55,7 +55,8 @@ services:
       - "8001:8001"
     env_file:
       - fastapi_api/.env 
- 
+    networks:
+      - default
 
   prometheus:
     image: prom/prometheus:v2.54.1
@@ -108,9 +109,13 @@ services:
       dockerfile: Dockerfile
     env_file:
       - AI_Language/.env
+    volumes:
+      - ./AI_Language:/app/AI_Language 
     depends_on:
       - ai #같은 네트워크 
-    restart: always
+    restart: unless-stopped
+
+
 
 
 volumes:
