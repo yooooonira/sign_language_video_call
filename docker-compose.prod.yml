@@ -11,7 +11,7 @@ services:
     # 컨테이너 시작 시 자동으로 읽음(비밀번호, API키 등)
     env_file:
       - drf_api/.env
-# 런타임 환경변수로 바로 주입, 단일 또는 고정 값 설정에 편리(DJANGO_SETTINGS_MODULE 등)
+
     environment:
       - DJANGO_SETTINGS_MODULE=drf_api.settings
     volumes:
