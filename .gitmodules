@@ -1,0 +1,3 @@
+[submodule "fastapi_api/AI_Language"]
+	path = fastapi_api/AI_Language
+	url = https://github.com/shinjungwoon/AI_Language.git
