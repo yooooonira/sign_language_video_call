@@ -18,11 +18,13 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
 
     try:
         while True:
-            message = await websocket.receive_text()   # 프런트에서 보낸 원본 문자열
+            message = await websocket.receive_text()   # 프런트에서 보낸 원본 문자열 [{x:0.1, y:0.2, z:-0.1}, {...}, ...]
             logger.info("프런트에서 수신(raw): %s", message[:200])
 
             try:
                 data = json.loads(message)
+                if isinstance(data, list):  # landmarks 배열만 오는 경우
+                    data = {"type": "hand_landmarks", "landmarks": data}
             except Exception:
                 # JSON 아니면 같은 방 브로드캐스트(기존 동작 유지)
                 logger.info("JSON 파싱 실패 -> 같은 방 브로드캐스트")
@@ -36,7 +38,7 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
             room_id = data.get("room_id") or hub.room_of(websocket)
 
             # 1) 프런트 -> AI 워커 : 좌표 전달
-            if mtype == "hand_landmarks": #{ "type": "hand_landmarks", "room_id": "<roomId>", "landmarks": [ [ { "x": number, "y": number }, ... ], ... ], "timestamp": <number> }
+            if mtype == "hand_landmarks": #{ "type": "hand_landmarks", "landmarks": [ [ { "x": number, "y": number }, ... ], ... ] }
                 try:
                     from . import main  # 순환 import 방지: 런타임에 불러오기
                     lm=data.get("landmarks") # "landmarks": [ [ { "x": number, "y": number }
