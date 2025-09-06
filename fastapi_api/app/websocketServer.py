@@ -14,11 +14,12 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
 ):
     await websocket.accept() # 클라이언트의 WebSocket 연결 요청을 수락
     await hub.add(websocket, role=role, room=room) # 허브에 등록
-    logger.info("연결됨 role=%s room=%s", role, room or "(없음)")
+    logger.info("연결됨 role=%s room=%s", role, room or "(없음)")   #★
 
     try:
         while True:
             message = await websocket.receive() #프런트에서 받고 
+            logger.info("받은 원본 메시지: %s", message)
 
             if message.get("type") == "websocket.disconnect":#못받으면 break 나가기
                 break
