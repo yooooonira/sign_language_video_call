@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from .state import hub  #허브에 등록용 
-import asyncio, json, logging, sys
+import asyncio, json, logging
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +9,6 @@ router = APIRouter()
 @router.websocket("/ai") # 클라이언트는 ws://localhost:8000/ai 로 연결. ai붙으면 허브로 들어감
 async def websocket_endpoint(  # 프런트에서 값가져오기
     websocket: WebSocket,
-    token: str | None = Query(default=None),
     role: str =  Query(...),
     room: str = Query(default="")
 ):
@@ -47,7 +46,7 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
                 if mtype == "hand_landmarks":
                     try:
                         from app import main  # 순환 import 방지: 런타임에 불러오기
-                        pred_idx, probs = main.predict_landmarks(data.get("data"))
+                        pred_idx, probs = main.predict_landmarks(data.get("data")) #추론 
 
                         # 클라이언트에 ai_result 전달
                         result = {

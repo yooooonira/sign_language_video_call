@@ -1,6 +1,5 @@
-# fastapi_api/app/main.py
 from fastapi import FastAPI
-from .websockets import router
+from .websocketServer import router  #@router.websocket("/ai"
 import logging, os, numpy as np
 
 try:
@@ -8,10 +7,10 @@ try:
 except ImportError:
     from tensorflow.lite.python.interpreter import Interpreter  # fallback
 
-from . import websockets 
+from . import websocketServer 
 
 logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+                    format="%(asctime)s %(levelname)s %(name)s - %(message)s")          # 로거 
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -21,7 +20,7 @@ _interpreter = None
 _in_det = None
 _out_det = None
 
-@app.on_event("startup")
+@app.on_event("startup")  #서버가 시작되면 실행 
 def load_model():
     global _interpreter, _in_det, _out_det
     try:
@@ -33,7 +32,7 @@ def load_model():
     except Exception:
         logger.exception("Failed to load TFLite model")
 
-def predict_landmarks(landmarks):  # landmarks: List[List[float]]
+def predict_landmarks(landmarks):  # landmarks: List[List[float]] #추론
     if _interpreter is None:
         raise RuntimeError("model_not_loaded")
     x = np.asarray(landmarks, dtype=np.float32)
@@ -50,6 +49,6 @@ def predict_landmarks(landmarks):  # landmarks: List[List[float]]
 def health():
     return {"status": "ok", "model_loaded": _interpreter is not None}
 
-app.include_router(websockets.router)
+app.include_router(websocketServer.router)
 
 logger.info("FastAPI 컨테이너 실행됨 (8001)")
