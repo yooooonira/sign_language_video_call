@@ -53,7 +53,7 @@ def predict_landmarks(landmarks):  # 추론
 
     x = to_text(landmarks)
     if x.ndim == 3:
-        x = x[0]            #
+        x = x[0]            
     if x.ndim == 2:
         x = x[None, ...]    
 

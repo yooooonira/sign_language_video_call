@@ -38,21 +38,22 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
             # 1) 프런트 -> AI 워커 : 좌표 전달
             if mtype == "hand_landmarks": #{ "type": "hand_landmarks", "room_id": "<roomId>", "landmarks": [ [ { "x": number, "y": number }, ... ], ... ], "timestamp": <number> }
                 try:
-                    from app import main  # 순환 import 방지: 런타임에 불러오기
-                    lm=data.get("landmarks")
+                    from . import main  # 순환 import 방지: 런타임에 불러오기
+                    lm=data.get("landmarks") # "landmarks": [ [ { "x": number, "y": number }
                     processed = [
                         [[pt["x"], pt["y"]] for pt in hand]
                             for hand in lm
                     ]
                     logger.info("hand_landmarks 수신, landmark=%s",lm)
-                    text, score = main.predict_landmarks(processed) #추론보내기 
+                    type,text, score = main.predict_landmarks(processed) #추론보내기 
 
                     # 클라이언트에 ai_result 전달
                     result = {
-                        "type": "ai_result",
+                        "type": type,
                         "text": str(text),      # 추론 라벨 문자열
-                        "score": float(max(score)) 
+                        "score": float(score) 
                     }
+                    logger.info("추론 결과 : %s",text)
                     payload = json.dumps(result)
                     logger.info("추론 결과를 프런트로 전달")
                     for client in list(hub.by_role_in_room("client", room_id)):
