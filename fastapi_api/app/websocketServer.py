@@ -18,12 +18,12 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
 
     try:
         while True:
-            message = await websocket.receive_text()   # 프런트에서 보낸 원본 문자열 [{x:0.1, y:0.2, z:-0.1}, {...}, ...]
+            message = await websocket.receive_text()   # 프런트에서 보낸 원본 문자열 { type:"hand_landmarks", room_id, landmarks, timestamp }
             logger.info("프런트에서 수신(raw): %s", message[:200])
 
             try:
                 data = json.loads(message)
-                if isinstance(data, list):  # landmarks 배열만 오는 경우
+                if isinstance(data, list):  # landmarks 배열만 오는 경우 [{x:0.1, y:0.2, z:-0.1}, {...}, ...]
                     data = {"type": "hand_landmarks", "landmarks": data}
             except Exception:
                 # JSON 아니면 같은 방 브로드캐스트(기존 동작 유지)
