@@ -98,7 +98,6 @@ services:
 
 volumes:
   postgres-data:
-  static-data:
   prometheus-data:
   grafana-data:
   alertmanager-data:

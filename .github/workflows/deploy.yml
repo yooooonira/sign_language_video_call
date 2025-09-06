@@ -1,14 +1,15 @@
-# name: deploy-ssh-compose
+# name: CD
 
 # on:
-#   push:
-#     branches: ["main"]   # main에 push되면 자동 실행
-#   workflow_dispatch:
+#   workflow_run:
+#     workflows: ["CI"]  # ← 현재 CI 워크플로우 이름
+#     types: [completed]
+#     branches: [main]
 
 # jobs:
 #   deploy:
 #     runs-on: ubuntu-latest
-
+#     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 #     steps:
 #       - name: Setup SSH
 #         run: |

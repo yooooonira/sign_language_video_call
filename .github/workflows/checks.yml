@@ -1,21 +1,95 @@
----
-name: Checks
+name: CI
 on:
   push:
-    branches:
-      - main # main 브랜치만
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
 jobs:
-  test-lint: # job 이름(이름 수정 가능)
+  quality-checks:
     runs-on: ubuntu-24.04
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Checkout # github -> ubuntu로 코드 가져오기 (로컬이 아니기때문에 가져와야함)
-        uses: actions/checkout@v2
-      - name: Test
-        run: docker compose run --rm app sh -c "python manage.py wait_for_db && python manage.py test"
-      - name: Lint
+
+      # 1. 테스트 (커버리지 포함)
+      - name: Run Tests with Coverage
+        run: |
+          docker compose run --rm app sh -c "
+            python manage.py wait_for_db &&
+            coverage run --source='drf_api' -m pytest -v &&
+            coverage xml &&
+            coverage html &&
+            coverage report --fail-under=80
+          "
+
+      # 2. 린트 체크
+      - name: Lint Check (flake8)
         run: docker compose run --rm app sh -c "flake8"
+
+      # 3. 타입 체크
+      - name: Type Check (mypy)
+        run: docker compose run --rm app sh -c "mypy . --ignore-missing-imports"
+
+      # 4. 포맷 체크
+      - name: Format Check (black)
+        run: docker compose run --rm app sh -c "black --check ."
+
+      - name: Import Sort Check (isort)
+        run: docker compose run --rm app sh -c "isort --check-only ."
+
+      # 5. 시큐리티 체크
+      - name: Security Check (bandit)
+        run: docker compose run --rm app sh -c "bandit -r . -f json -o bandit-report.json"
+        continue-on-error: true
+
+      - name: Dependency Security Check (safety)
+        run: docker compose run --rm app sh -c "safety check --json --output safety-report.json"
+        continue-on-error: true
+
+      # 6. 아티팩트 업로드 (간단한 방식)
+      - name: Upload Coverage XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+      - name: Upload Coverage HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov/
+
+      - name: Upload Security Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+
+      # 7. 테스트 결과 업로드
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      # 8. 커버리지 코멘트 (PR에만)
+      - name: Coverage Comment
+        if: github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          COVERAGE_FILE: coverage.xml
