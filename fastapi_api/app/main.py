@@ -32,18 +32,41 @@ def load_model():
     except Exception:
         logger.exception("Failed to load TFLite model")
 
-def predict_landmarks(landmarks):  # landmarks: List[List[float]] #추론
-    if _interpreter is None:
-        raise RuntimeError("model_not_loaded")
-    x = np.asarray(landmarks, dtype=np.float32)
+def predict_landmarks(landmarks):  # 추론 
+    # "landmarks": [ [ { "x": number, "y": number }, ... ], ... ]
+
+    def to_text(landmarks):
+        if not landmarks:
+            return np.zeros((1, 1, 2), dtype=np.float32)
+        # hands > dict points
+        if isinstance(landmarks[0], list) and landmarks[0] and isinstance(landmarks[0][0], dict):
+            arr = np.asarray([[[float(p["x"]), float(p["y"])] for p in hand] for hand in landmarks], dtype=np.float32)
+        # hands > list points
+        elif isinstance(landmarks[0], list) and landmarks[0] and isinstance(landmarks[0][0], (int, float)):
+            arr = np.asarray(landmarks, dtype=np.float32)  # shape (T,2)
+        # single hand as dict list
+        elif isinstance(landmarks[0], dict):
+            arr = np.asarray([[float(p["x"]), float(p["y"])] for p in landmarks], dtype=np.float32)  # (T,2)
+        else:
+            arr = np.asarray(landmarks, dtype=np.float32)
+        return arr
+
+    x = to_text(landmarks)
+    if x.ndim == 3:
+        x = x[0]            #
     if x.ndim == 2:
-        x = x[None, ...]  # (T,D) -> (1,T,D)
+        x = x[None, ...]    
+
     _interpreter.set_tensor(_in_det[0]["index"], x)
     _interpreter.invoke()
-    y = _interpreter.get_tensor(_out_det[0]["index"])
+    y = _interpreter.get_tensor(_out_det[0]["index"])  
+
     probs = y[0].tolist()
     pred_idx = int(np.argmax(y[0]))
-    return pred_idx, probs
+    score = float(max(probs))
+
+    return  "ai_result",str(pred_idx), score
+
 
 @app.get("/ai/health")
 def health():
