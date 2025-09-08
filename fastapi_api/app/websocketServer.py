@@ -196,10 +196,15 @@ async def websocket_endpoint(
                 continue
 
             # --- 그 외는 브로드캐스트 --------------------------------------
-            payload = json.dumps(data, ensure_ascii=False)
-            for client in list(hub.in_room(room_id)):
-                if client is not websocket:
-                    await client.send_text(payload)
+            # (추가) 자막 이벤트 타입을 caption으로 강제 통일
+            if data.get("type") == "subtitle":
+                data["type"] = "caption"
+
+                payload = json.dumps(data, ensure_ascii=False)
+                for client in list(hub.in_room(room_id)):
+                    if client is not websocket:
+                        await client.send_text(payload)
+
 
     except (WebSocketDisconnect, asyncio.TimeoutError):
         pass
