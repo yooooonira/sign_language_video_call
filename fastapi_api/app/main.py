@@ -1,26 +1,37 @@
 from fastapi import FastAPI
 from .websocketServer import router  # @router.websocket("/ai")
-import logging, os, numpy as np
+import logging, os, sys, numpy as np
 
+# ---- TFLite Interpreter -------------------------------------------------
 try:
     from tflite_runtime.interpreter import Interpreter
 except ImportError:
     from tensorflow.lite.python.interpreter import Interpreter  # fallback
 
-# --- AI_Language 경로 추가 (Vector_Normalization 사용) ---------------------
-import sys
+# ---- AI_Language 경로 추가 (Vector_Normalization 사용) -------------------
 AI_LANGUAGE_DIR = os.getenv("AI_LANGUAGE_DIR", "/fastapp/AI_Language")
-if os.path.isdir(AI_LANGUAGE_DIR) and AI_LANGUAGE_DIR not in sys.path:
-    sys.path.insert(0, AI_LANGUAGE_DIR)
-else:
-    print(f"[WARN] AI_LANGUAGE_DIR not found: {AI_LANGUAGE_DIR}")
 
+# 후보 경로: 루트와 하위(Sign_Language_Translation)를 모두 sys.path에 추가
+candidates = [AI_LANGUAGE_DIR, os.path.join(AI_LANGUAGE_DIR, "Sign_Language_Translation")]
+for p in candidates:
+    if os.path.isdir(p) and p not in sys.path:
+        sys.path.insert(0, p)
+else:
+    if not any(os.path.isdir(p) for p in candidates):
+        print(f"[WARN] AI_LANGUAGE_DIR not found: {AI_LANGUAGE_DIR}")
+
+# Vector_Normalization 가져오기
+HAVE_VECTOR = False
 try:
-    from ..AI_Language.Sign_Language_Translation.modules.utils import Vector_Normalization  # 학습 전처리 경로
+    from modules.utils import Vector_Normalization  # type: ignore
     HAVE_VECTOR = True
-except Exception as e:
-    print(f"[WARN] cannot import modules.utils.Vector_Normalization -> {e}")
-    HAVE_VECTOR = False
+except Exception as e1:
+    try:
+        from Sign_Language_Translation.modules.utils import Vector_Normalization  # type: ignore
+        HAVE_VECTOR = True
+    except Exception as e2:
+        print(f"[WARN] cannot import Vector_Normalization: {e1} / {e2}")
+        HAVE_VECTOR = False
 # ------------------------------------------------------------------------
 
 logging.basicConfig(
@@ -35,13 +46,12 @@ MODEL_PATH = os.getenv(
     "TFLITE_PATH",
     "/fastapp/AI_Language/models/multi_hand_gesture_classifier.tflite"
 )
-ALWAYS_EMIT = os.getenv("ALWAYS_EMIT_CAPTION", "") == "1"
 
 _interpreter = None
 _in_det = None
 _out_det = None
 
-# --- 라벨/임계값 -----------------------------------------------------------
+# ---- 라벨/임계값 ---------------------------------------------------------
 ACTIONS = [
     'ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
     'ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ',
@@ -49,6 +59,9 @@ ACTIONS = [
 ]
 USE_JAMO = False  # num_classes == len(ACTIONS) 이면 자모 모델
 MIN_CONF = float(os.getenv("MIN_CONFIDENCE", "0.8"))
+
+# (추가) 낮은 점수여도 강제로 자막을 보이게 하는 디버깅 스위치
+ALWAYS_EMIT = os.getenv("ALWAYS_EMIT_CAPTION", "") == "1"
 # ------------------------------------------------------------------------
 
 
@@ -72,6 +85,7 @@ def load_model():
         logger.info("feature_dim=%s num_classes=%s", feature_dim, num_classes)
         logger.info("MODEL TYPE = %s", "JAMO" if USE_JAMO else "SENTENCE")
         logger.info("Vector_Normalization available = %s (from %s)", HAVE_VECTOR, AI_LANGUAGE_DIR)
+        logger.info("ALWAYS_EMIT_CAPTION = %s", ALWAYS_EMIT)
     except Exception:
         logger.exception("Failed to load TFLite model")
 
@@ -149,7 +163,7 @@ def _label_from_idx(idx: int) -> str:
     return _SENTENCE_MAP.get(idx, f"수어_{idx}")
 
 
-# -------------------------- 추론 함수 -------------------------------------
+# -------------------------- 추론 공통/보조 --------------------------------
 def infer_any(x_1x10x55: np.ndarray):
     """(1,10,55) 입력으로 직접 추론"""
     x = x_1x10x55.astype(_in_det[0]["dtype"], copy=False)
@@ -161,32 +175,59 @@ def infer_any(x_1x10x55: np.ndarray):
     score = float(max(probs))
     return idx, score
 
+def _mirror_frames(frames_10x21x2: np.ndarray) -> np.ndarray:
+    """x 좌표 미러링(좌/우 손 보정)"""
+    arr = np.asarray(frames_10x21x2, dtype=np.float32).copy()
+    arr[..., 0] = 1.0 - arr[..., 0]
+    return arr
 
+
+# -------------------------- 추론 함수 -------------------------------------
 def predict_from_single_frame(points_21x2):
-    """(21,2) 단일 프레임 추론 → (label, score)"""
+    """
+    (21,2) 단일 프레임 → (10,21,2)로 타일링 후
+    원본/미러링 두 경우 중 점수 높은 것을 채택
+    """
     try:
-        x = _coerce_to_1x10x55(np.asarray(points_21x2, dtype=np.float32))
-        idx, score = infer_any(x)
-        label = _label_from_idx(idx)
-        if score < MIN_CONF and not ALWAYS_EMIT:
-            return "", score
-        return label, score
-
+        f = np.asarray(points_21x2, dtype=np.float32)[None, :, :]  # (1,21,2)
+        f = np.repeat(f, 10, axis=0)                               # (10,21,2)
+        return predict_from_sequence(f)
     except Exception:
         logger.exception("단일 프레임 추론 실패")
         return "", 0.0
 
 
 def predict_from_sequence(frames_10x21x2):
-    """(10,21,2) 시퀀스 추론 → (label, score)"""
+    """
+    (10,21,2) 시퀀스 → 원본/미러링 비교 후 더 높은 확신도를 사용
+    ALWAYS_EMIT_CAPTION=1 이면 임계값 미만이라도 레이블을 표시
+    """
     try:
-        arr = np.asarray(frames_10x21x2, dtype=np.float32)
-        x = _coerce_to_1x10x55(arr)
+        a0 = np.asarray(frames_10x21x2, dtype=np.float32)
+
+        # 원본
+        x0 = _coerce_to_1x10x55(a0)
+        # (디버깅용) 특징 차원 확인
         expected = int(_in_det[0]["shape"][2]) if len(_in_det[0]["shape"]) >= 3 else None
-        got = int(x.shape[2])
-        if expected is not None and got != expected:
-            logger.warning("feature dim mismatch: got=%d expected=%d", got, expected)
-        idx, score = infer_any(x)
+        got0 = int(x0.shape[2])
+        if expected is not None and got0 != expected:
+            logger.warning("feature dim mismatch (orig): got=%d expected=%d", got0, expected)
+        i0, s0 = infer_any(x0)
+
+        # 미러링
+        a1 = _mirror_frames(a0)
+        x1 = _coerce_to_1x10x55(a1)
+        got1 = int(x1.shape[2])
+        if expected is not None and got1 != expected:
+            logger.warning("feature dim mismatch (mirr): got=%d expected=%d", got1, expected)
+        i1, s1 = infer_any(x1)
+
+        # 더 높은 확신도 선택
+        if s1 > s0:
+            idx, score = i1, s1
+        else:
+            idx, score = i0, s0
+
         label = _label_from_idx(idx)
         if score < MIN_CONF and not ALWAYS_EMIT:
             return "", score
