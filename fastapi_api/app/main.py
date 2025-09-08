@@ -11,9 +11,23 @@ except ImportError:
 
 from . import websocketServer
 
-# <<< ADD: 학습과 동일 전처리를 위해 사용 (벡터 정규화 + 각도 등) -----------------
-from modules.utils import Vector_Normalization
-# >>> ADD END ------------------------------------------------------------------
+# <<< ADD: modules.utils 를 찾기 위해 AI_Language 경로를 sys.path에 추가 ----------------
+import sys
+AI_LANGUAGE_DIR = os.getenv("AI_LANGUAGE_DIR", "/fastapp/AI_Language")
+if os.path.isdir(AI_LANGUAGE_DIR) and AI_LANGUAGE_DIR not in sys.path:
+    sys.path.insert(0, AI_LANGUAGE_DIR)
+else:
+    # 경로가 없으면 경고 (fallback 전처리 사용)
+    print(f"[WARN] AI_LANGUAGE_DIR not found: {AI_LANGUAGE_DIR}")
+
+try:
+    # AI_Language/modules/utils.py 안의 Vector_Normalization 사용
+    from modules.utils import Vector_Normalization  # noqa: E402
+    HAVE_VECTOR = True
+except Exception as e:
+    print(f"[WARN] cannot import modules.utils.Vector_Normalization -> {e}")
+    HAVE_VECTOR = False
+# >>> ADD END -------------------------------------------------------------------
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,8 +53,7 @@ ACTIONS = [
     'ㅐ','ㅒ','ㅔ','ㅖ','ㅢ','ㅚ','ㅟ'
 ]
 USE_JAMO = False  # num_classes == len(ACTIONS) 이면 자모 모델로 간주
-# 화면 노이즈 감소용 신뢰도 임계치
-MIN_CONF = float(os.getenv("MIN_CONFIDENCE", "0.8"))
+MIN_CONF = float(os.getenv("MIN_CONFIDENCE", "0.8"))  # 낮은 확률 필터
 # >>> ADD END
 # =========================================================
 
@@ -57,7 +70,7 @@ def load_model():
         _in_det = _interpreter.get_input_details()
         _out_det = _interpreter.get_output_details()
 
-        # >>> ADD: 입출력 shape/피처차원/클래스수 로깅 + 타입판단
+        # 입출력 shape/피처차원/클래스수 로깅 + 타입판단
         in_shape  = tuple(int(s) for s in _in_det[0]['shape'])
         out_shape = tuple(int(s) for s in _out_det[0]['shape'])
         feature_dim = int(in_shape[-1]) if len(in_shape) >= 3 else None
@@ -68,7 +81,10 @@ def load_model():
         logger.info("TFLite feature_dim(per frame) = %s", feature_dim)
         logger.info("TFLite num_classes = %s", num_classes)
         logger.info("★★★ MODEL TYPE = %s", "JAMO" if USE_JAMO else "SENTENCE")
-        # <<< ADD END
+
+        # <<< ADD: Vector_Normalization import 성공/실패 정보
+        logger.info("Vector_Normalization available = %s (from %s)", HAVE_VECTOR, AI_LANGUAGE_DIR)
+        # >>> ADD END
 
     except Exception:
         logger.exception("Failed to load TFLite model")
@@ -80,46 +96,48 @@ def load_model():
 # 전처리/보정 유틸
 # =========================================================
 
-# <<< ADD: (10,21,2) → (1,10,55) 전처리 (학습과 동일 경로) -----------------------
+# <<< ADD: 학습 전처리 버전 (Vector_Normalization 이 있을 때만 사용) --------------
 def frames_to_feats_55(frames_10x21x2: np.ndarray) -> np.ndarray:
     """
-    입력: (10,21,2)  float32  [각 프레임에 21개 (x,y)]
-    출력: (1,10,55) float32  [학습 당시와 동일한 55차 특징]
-    NOTE:
-      - 학습 코드에서 사용하던 Vector_Normalization + angle 기반 특징을 그대로 사용
-      - joint는 (42,2)로 만들고, 0..20(=21개)에만 현재 손(한 손) 좌표를 채움
+    입력: (10,21,2) float32
+    출력: (1,10,55) float32  (Vector_Normalization 기반, 학습과 동일 경로)
     """
     assert frames_10x21x2.shape == (10, 21, 2), f"unexpected shape {frames_10x21x2.shape}"
     feats = []
     for f in range(10):
-        # (21,2) → (42,2) joint로 확장 (학습 코드 호환)
+        # 학습 코드가 (42,2) joint를 받도록 되어 있으므로 21개만 채움
         joint = np.zeros((42, 2), dtype=np.float32)
         joint[:21, :] = frames_10x21x2[f]
-
-        # 학습과 동일 전처리
-        vector, angle_label = Vector_Normalization(joint)  # <-- 중요!
+        vector, angle_label = Vector_Normalization(joint)
         d = np.concatenate([vector.flatten(), angle_label.flatten()]).astype(np.float32)
         feats.append(d)
-
-    X = np.stack(feats, axis=0)  # (10, F)  보통 F=55
-    # 기대 차원 로깅
-    exp = int(_in_det[0]['shape'][2])
-    if X.shape[1] != exp:
-        logger.warning("per-frame feature mismatch: got=%d expected=%d", X.shape[1], exp)
-    return X[None, :, :]         # (1,10,F)
+    X = np.stack(feats, axis=0)  # (10,55 예상)
+    return X[None, :, :]         # (1,10,55)
 # >>> ADD END ------------------------------------------------------------------
 
 
-# <<< CHANGED: 어떤 입력이 와도 (1,10,55)로 강제 변환(패딩 제거, 전처리 적용) -------
+# <<< ADD: 임시(폴백) 전처리 — Vector_Normalization 을 못 쓸 때만 사용 --------------
+def fallback_preprocess_to_55(frames_10x21x2: np.ndarray) -> np.ndarray:
+    """
+    입력: (10,21,2) → 좌표 42개 평탄화 + 13개 zero padding = 55
+    ※ 정확도는 낮을 수 있음(학습 전처리와 다름). 임시 비상용.
+    """
+    base = frames_10x21x2.reshape(10, 42).astype(np.float32)  # (10,42)
+    pad = np.zeros((10, 13), dtype=np.float32)                # (10,13)
+    feats = np.concatenate([base, pad], axis=1)               # (10,55)
+    return feats[None, :, :]                                  # (1,10,55)
+# >>> ADD END ------------------------------------------------------------------
+
+
+# <<< CHANGED: 어떤 입력이 와도 (1,10,55)로 강제 변환(전처리/폴백 자동 선택) --------
 def _coerce_to_1x10x55(arr: np.ndarray) -> np.ndarray:
     """
     허용 케이스와 변환:
-      - (21,2)      : 단일 프레임 → 10프레임 타일링 → frames_to_feats_55()
-      - (10,21,2)   : 그대로 frames_to_feats_55()
-      - (10,42)     : 좌표로 간주해 (10,21,2)로 reshape 후 frames_to_feats_55()
-      - (1,10,42)   : 좌표로 간주해 (10,21,2)로 reshape 후 frames_to_feats_55()
-      - (10,55)     : 이미 특징이면 배치 축만 추가
-      - (1,10,55)   : 그대로 통과
+      - (21,2)      : 단일 프레임 → 10프레임 타일링 → (전처리)
+      - (10,21,2)   : (전처리)
+      - (10,42)     : 좌표로 간주해 (10,21,2)로 reshape 후 (전처리)
+      - (1,10,42)   : 좌표로 간주해 (10,21,2)로 reshape 후 (전처리)
+      - (10,55)/(1,10,55): 이미 특징이면 그대로
     """
     arr = np.asarray(arr, dtype=np.float32)
 
@@ -127,22 +145,27 @@ def _coerce_to_1x10x55(arr: np.ndarray) -> np.ndarray:
     if arr.ndim == 3 and arr.shape[0] == 1:
         arr = arr[0]
 
-    # 단일 프레임 → 10프레임 복제 후 학습 전처리
+    # (21,2) → 10프레임 복제
     if arr.shape == (21, 2):
-        arr10 = np.tile(arr[None, :, :], (10, 1, 1))      # (10,21,2)
-        return frames_to_feats_55(arr10)                   # (1,10,55)
+        arr = np.tile(arr[None, :, :], (10, 1, 1))  # (10,21,2)
 
-    # 표준 시퀀스(좌표) → 학습 전처리
+    # 좌표 시퀀스 → 특징
     if arr.shape == (10, 21, 2):
-        return frames_to_feats_55(arr)                     # (1,10,55)
+        if HAVE_VECTOR:
+            return frames_to_feats_55(arr)
+        else:
+            logger.warning("Using FALLBACK preprocessing (accuracy may degrade)")
+            return fallback_preprocess_to_55(arr)
 
-    # (10,42) / (1,10,42) 좌표 → (10,21,2)로 바꾼 뒤 전처리
+    # 좌표 평탄화(10,42)/(1,10,42)
     if arr.shape == (10, 42):
-        return frames_to_feats_55(arr.reshape(10, 21, 2))
+        arr = arr.reshape(10, 21, 2)
+        return _coerce_to_1x10x55(arr)
     if arr.shape == (1, 10, 42):
-        return frames_to_feats_55(arr.reshape(10, 21, 2))
+        arr = arr.reshape(10, 21, 2)
+        return _coerce_to_1x10x55(arr)
 
-    # 이미 특징(55)인 경우만 그대로
+    # 이미 특징이면 그대로
     if arr.shape == (10, 55):
         return arr[None, :, :]
     if arr.shape == (1, 10, 55):
@@ -157,76 +180,43 @@ def _coerce_to_1x10x55(arr: np.ndarray) -> np.ndarray:
 # 추론 함수들
 # =========================================================
 
-# >>> CHANGED: 단건 경로도 안전하게 (1,10,55)로 맞춰 추론
 def predict_landmarks(landmarks):
-    """
-    landmarks 예시:
-      - [ {x:float, y:float}, ... ] (길이 21)          -> (21,2)로 파싱
-      - [ [x,y], [x,y], ... ] (길이 21)               -> (21,2)
-      - 그 외 (10,21,2) / (10,42) / (10,55) / (1,10,42) / (1,10,55)
-    반환: ("ai_result", str(pred_idx), score)
-    """
-
+    """단건(한 프레임) 추론: 내부에서 10프레임으로 타일링 후 시퀀스 경로로 처리"""
     def to_ndarray(landmarks):
         if not landmarks:
             return np.zeros((21, 2), dtype=np.float32)
         first = landmarks[0]
-        # dict 포맷([{x,y}, ...])
         if isinstance(first, dict) and "x" in first and "y" in first:
-            # 단일 프레임(21개 포인트) 가정
             return np.asarray([[float(p["x"]), float(p["y"])] for p in landmarks], dtype=np.float32)  # (21,2)
-        # 리스트 포맷([x,y] ...]
         if isinstance(first, (list, tuple)) and len(first) >= 2:
             return np.asarray(landmarks, dtype=np.float32)
-        # 이미 ndarray
         return np.asarray(landmarks, dtype=np.float32)
 
     try:
         x_raw = to_ndarray(landmarks)
-        x = _coerce_to_1x10x55(x_raw)  # <<< 핵심: (1,10,55)로 강제 변환
-
-        # dtype 일치
+        x = _coerce_to_1x10x55(x_raw)
         x = x.astype(_in_det[0]["dtype"], copy=False)
-
-        # 안전 로깅(크래시 방지: assert 대신 경고)
-        if len(_in_det[0]["shape"]) >= 3:
-            expected = int(_in_det[0]["shape"][2])
-            if x.shape[2] != expected:
-                logger.warning("predict_landmarks() feature_dim mismatch: got=%d expected=%d", x.shape[2], expected)
-
         _interpreter.set_tensor(_in_det[0]["index"], x)
         _interpreter.invoke()
         y = _interpreter.get_tensor(_out_det[0]["index"])
-
         probs = y[0].tolist()
         pred_idx = int(np.argmax(y[0]))
         score = float(max(probs))
         return "ai_result", str(pred_idx), score
-
     except Exception as e:
         logger.exception("단일 추론 실패: %s", e)
         return "ai_result", "-1", 0.0
-# >>> CHANGED END
 
 
-# >>> CHANGED: 시퀀스 경로도 (1,10,55)로 강제 변환 + 자모/문장 분기 + 임계치 필터
 def predict_landmarks_sequence(frame_sequence):
-    """
-    10프레임 시퀀스 처리:
-      frame_sequence 예시: (10,21,2) 또는 호환 가능한 형태
-    반환: ("subtitle", translated_text, score)
-    """
+    """10프레임 시퀀스 추론"""
     try:
         arr = np.asarray(frame_sequence, dtype=np.float32)
         logger.info("시퀀스 입력 shape: %s", arr.shape)
 
-        # 핵심: 어떤 형태든 (1,10,55)로 보정 (학습 전처리 적용)
-        x = _coerce_to_1x10x55(arr)                           # (1,10,55)
-
-        # dtype 일치
+        x = _coerce_to_1x10x55(arr)   # (1,10,55)
         x = x.astype(_in_det[0]["dtype"], copy=False)
 
-        # 디버그: 기대 피처 차원 확인
         expected = int(_in_det[0]["shape"][2]) if len(_in_det[0]["shape"]) >= 3 else None
         got = int(x.shape[2])
         logger.info("모델 입력 shape(보정 후): %s, feature=%s", x.shape, got)
@@ -241,17 +231,13 @@ def predict_landmarks_sequence(frame_sequence):
         pred_idx = int(np.argmax(y[0]))
         score = float(max(probs))
 
-        # <<< ADD: 낮은 신뢰도는 화면에 표시하지 않음
+        # 낮은 신뢰도는 출력하지 않음
         if score < MIN_CONF:
             return "subtitle", "", score
-        # >>> ADD END
 
-        # 모델 타입에 따라 텍스트 생성
         if USE_JAMO:
-            # 자모 모델: 인덱스를 자모 한 글자로 반환 (프런트에서 합성)
             translated_text = ACTIONS[pred_idx] if 0 <= pred_idx < len(ACTIONS) else ""
         else:
-            # 문장/구 모델: 클래스 맵 필요
             sign_language_map = {
                 0: "안녕하세요",
                 1: "감사합니다",
@@ -266,7 +252,6 @@ def predict_landmarks_sequence(frame_sequence):
     except Exception as e:
         logger.exception("시퀀스 추론 실패: %s", e)
         return "subtitle", "인식 실패", 0.0
-# >>> CHANGED END
 # =========================================================
 
 
