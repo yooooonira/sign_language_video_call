@@ -16,7 +16,7 @@ else:
     print(f"[WARN] AI_LANGUAGE_DIR not found: {AI_LANGUAGE_DIR}")
 
 try:
-    from modules.utils import Vector_Normalization  # 학습 전처리 경로
+    from ..AI_Language.Sign_Language_Translation.modules.utils import Vector_Normalization  # 학습 전처리 경로
     HAVE_VECTOR = True
 except Exception as e:
     print(f"[WARN] cannot import modules.utils.Vector_Normalization -> {e}")
