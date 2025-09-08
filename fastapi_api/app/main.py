@@ -32,6 +32,21 @@ def load_model():
     except Exception:
         logger.exception("Failed to load TFLite model")
 
+# >>> 추가: (10,21,2) → (1,10,55) 전처리 (임시 패딩 버전)
+def preprocess_to_55(frames_10x21x2: np.ndarray) -> np.ndarray:
+    """
+    입력: (10, 21, 2) float32
+    출력: (1, 10, 55) float32
+    NOTE: 현재는 42 뒤에 13개 0을 패딩. 학습시 사용한 55차 전처리(정규화/거리/각도 등)를
+          알고 있다면 반드시 그 규칙대로 계산해 교체하세요.
+    """
+    assert frames_10x21x2.shape == (10, 21, 2)
+    base = frames_10x21x2.reshape(10, 42).astype(np.float32)  # (10,42)
+    pad = np.zeros((10, 13), dtype=np.float32)                # (10,13)
+    feats = np.concatenate([base, pad], axis=1)               # (10,55)
+    return feats[np.newaxis, :, :]                            # (1,10,55)
+# <<< 추가 끝
+
 def predict_landmarks(landmarks):  # 추론
     # "landmarks": [ [ { "x": number, "y": number }, ... ], ... ]
 
