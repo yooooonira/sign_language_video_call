@@ -14,8 +14,7 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
 ):
     await websocket.accept() # 클라이언트의 WebSocket 연결 요청을 수락
     await hub.add(websocket, role=role, room=room) # 허브에 등록
-    logger.info("연결됨 logger role=%s room=%s", role, room or "(없음)")
-    print("웹소켓 연결됨 print", role, room)
+    logger.info("연결됨 role=%s room=%s", role, room or "(없음)")
     try:
         while True:
             message = await websocket.receive() #프런트에서 받고
