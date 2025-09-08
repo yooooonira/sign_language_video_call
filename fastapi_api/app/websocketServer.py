@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from .state import hub  #허브에 등록용 
+from .state import hub  #허브에 등록용
 import asyncio, json, logging
 
 logger = logging.getLogger(__name__)
@@ -14,8 +14,8 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
 ):
     await websocket.accept() # 클라이언트의 WebSocket 연결 요청을 수락
     await hub.add(websocket, role=role, room=room) # 허브에 등록
-    logger.info("연결됨 role=%s room=%s", role, room or "(없음)")   #★
-
+    logger.info("(logger)연결됨 role=%s room=%s", role, room or "(없음)")   #★
+    print("(print)연결됨 role=%s room=%s", role, room or "(없음)")   #★
     try:
         while True:
             message = await websocket.receive_text()   # 프런트에서 보낸 원본 문자열 { type:"hand_landmarks", room_id, landmarks, timestamp }
@@ -47,13 +47,13 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
                             for hand in lm
                     ]
                     logger.info("hand_landmarks 수신, landmark=%s",lm)
-                    type,text, score = main.predict_landmarks(processed) #추론보내기 
+                    type,text, score = main.predict_landmarks(processed) #추론보내기
 
                     # 클라이언트에 ai_result 전달
                     result = {
                         "type": type,
                         "text": str(text),      # 추론 라벨 문자열
-                        "score": float(score) 
+                        "score": float(score)
                     }
                     logger.info("추론 결과 : %s",text)
                     payload = json.dumps(result)
