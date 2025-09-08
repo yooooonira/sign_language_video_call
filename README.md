@@ -36,7 +36,7 @@
 이 서비스의 수어 번역은 영상 자체가 아닌 수어 좌표를 입력 받아 추론합니다.
 
 **1.** 수어 좌표 추출
-브라우저(WebRTC + MediaPipe)에서 수어 좌표를 추출하고, Websocket을 통해 FastAPI hub로 전송됩니다.
+브라우저(React + WebRTC + MediaPipe)에서 수어 좌표를 추출하고, Websocket을 통해 FastAPI hub로 전송됩니다.
 
 **2.** 데이터 라우팅
 FastAPI hub는 받은 좌표 데이터를 ai_worker에게 전달합니다.
@@ -65,9 +65,3 @@ FastAPI hub는 ai_worker의 추론 결과를 클라이언트로 전송합니다.
 ASGI 기반으로 WebSocket에 강해 성능이 좋습니다.  
     실시간 트래픽 급증이 DRF와 분리하여 안정성 향상하고자 했습니다. 
 
-### 추론은 별도 프로세스
-- FastAPI 와 번역 모델 분리
-FastAPI: I/O 전달 및 연결 전용
-ai_worker: 모델 추론 전용  
-**이유**:
-fastapi는 연결 관리에 담당하고, ai_worker는 모델 추론만 담당하여 안정적인 구조를 구현하고자 했습니다.
