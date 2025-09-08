@@ -67,29 +67,25 @@ def predict_landmarks(landmarks):  # 추론
 
     return  "ai_result",str(pred_idx), score
 
-# 여기에 새로운 함수 추가
+# 10프레임 시퀀스 처리
 def predict_landmarks_sequence(frame_sequence):
-    """15프레임 시퀀스를 처리하는 함수"""
+    """10프레임 시퀀스를 처리하는 함수"""
     try:
-        # frame_sequence: [[[x,y], [x,y], ...], [...], ...]  # 15프레임 x 21좌표
-
         # numpy 배열로 변환
         if isinstance(frame_sequence[0][0], list):
-            # 이미 [[x,y], [x,y]] 형태
-            arr = np.asarray(frame_sequence, dtype=np.float32)  # (15, 21, 2)
+            arr = np.asarray(frame_sequence, dtype=np.float32)  # (10, 21, 2)
         else:
-            # 다른 형태면 변환
             arr = np.asarray(frame_sequence, dtype=np.float32)
 
         logger.info("시퀀스 입력 shape: %s", arr.shape)
 
-        # 모델 입력 형태에 맞게 reshape
-        # 모델이 (15, 21*2) = (15, 42) 형태를 원한다면:
-        if arr.shape == (15, 21, 2):
-            x = arr.reshape(1, 15, 42)  # (1, 15, 42)
+        # 10프레임, 21개 좌표, 2차원(x,y)인지 확인
+        if arr.shape == (10, 21, 2):
+            # (10, 21, 2) → (1, 10, 42) 로 변환
+            x = arr.reshape(1, 10, 42)
         else:
-            # 다른 경우에 대한 처리
-            x = arr.reshape(1, 15, -1)
+            # 다른 형태면 에러
+            raise ValueError(f"예상하지 못한 입력 형태: {arr.shape}")
 
         logger.info("모델 입력 shape: %s", x.shape)
 
@@ -101,14 +97,12 @@ def predict_landmarks_sequence(frame_sequence):
         pred_idx = int(np.argmax(y[0]))
         score = float(max(probs))
 
-        # 수어 번역 결과 매핑 (예시)
         sign_language_map = {
             0: "안녕하세요",
             1: "감사합니다",
             2: "죄송합니다",
             3: "좋아요",
             4: "싫어요",
-            # 더 많은 매핑 추가
         }
 
         translated_text = sign_language_map.get(pred_idx, f"수어_{pred_idx}")
@@ -118,7 +112,6 @@ def predict_landmarks_sequence(frame_sequence):
     except Exception as e:
         logger.exception("시퀀스 추론 실패: %s", e)
         return "subtitle", "인식 실패", 0.0
-
 @app.get("/ai/health")
 def health():
     return {"status": "ok", "model_loaded": _interpreter is not None}
