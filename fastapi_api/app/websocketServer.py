@@ -1,32 +1,31 @@
+# websocketServer.py 전체 수정
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from .state import hub  #허브에 등록용
+from .state import hub
 import asyncio, json, logging
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter()
 
-@router.websocket("/ai") # 클라이언트는 ws://localhost:8000/ai 로 연결. ai붙으면 허브로 들어감
-async def websocket_endpoint(  # 프런트에서 값가져오기
+@router.websocket("/ai")
+async def websocket_endpoint(
     websocket: WebSocket,
-    role: str =  Query(...),
+    role: str = Query(...),
     room: str = Query(default="")
 ):
-    await websocket.accept() # 클라이언트의 WebSocket 연결 요청을 수락
-    await hub.add(websocket, role=role, room=room) # 허브에 등록
-    logger.info("(logger)연결됨 role=%s room=%s", role, room or "(없음)")   #★
-    print("(print)연결됨 role=%s room=%s", role, room or "(없음)")   #★
+    await websocket.accept()
+    await hub.add(websocket, role=role, room=room)
+    logger.info("연결됨 role=%s room=%s", role, room or "(없음)")
+
     try:
         while True:
-            message = await websocket.receive_text()   # 프런트에서 보낸 원본 문자열 { type:"hand_landmarks", room_id, landmarks, timestamp }
+            message = await websocket.receive_text()
             logger.info("프런트에서 수신(raw): %s", message[:200])
 
             try:
                 data = json.loads(message)
-                if isinstance(data, list):  # landmarks 배열만 오는 경우 [{x:0.1, y:0.2, z:-0.1}, {...}, ...]
+                if isinstance(data, list):
                     data = {"type": "hand_landmarks", "landmarks": data}
             except Exception:
-                # JSON 아니면 같은 방 브로드캐스트(기존 동작 유지)
                 logger.info("JSON 파싱 실패 -> 같은 방 브로드캐스트")
                 room_id = hub.room_of(websocket)
                 for client in list(hub.in_room(room_id)):
@@ -37,27 +36,26 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
             mtype = data.get("type")
             room_id = data.get("room_id") or hub.room_of(websocket)
 
-            # 1) 프런트 -> AI 워커 : 좌표 전달
-            if mtype == "hand_landmarks": #{ "type": "hand_landmarks", "landmarks": [ [ { "x": number, "y": number }, ... ], ... ] }
+            # 1) 기존 단일 프레임 처리 (호환성 유지)
+            if mtype == "hand_landmarks":
                 try:
-                    from . import main  # 순환 import 방지: 런타임에 불러오기
-                    lm=data.get("landmarks") # "landmarks": [ [ { "x": number, "y": number }
+                    from . import main
+                    lm = data.get("landmarks")
                     processed = [
                         [[pt["x"], pt["y"]] for pt in hand]
-                            for hand in lm
+                        for hand in lm
                     ]
-                    logger.info("hand_landmarks 수신, landmark=%s",lm)
-                    type,text, score = main.predict_landmarks(processed) #추론보내기
+                    logger.info("hand_landmarks 수신, landmark=%s", lm)
+                    type_result, text, score = main.predict_landmarks(processed)
 
-                    # 클라이언트에 ai_result 전달
                     result = {
-                        "type": type,
-                        "text": str(text),      # 추론 라벨 문자열
+                        "type": type_result,
+                        "text": str(text),
                         "score": float(score)
                     }
-                    logger.info("추론 결과 : %s",text)
+                    logger.info("추론 결과: %s", text)
                     payload = json.dumps(result)
-                    logger.info("추론 결과를 프런트로 전달")
+
                     for client in list(hub.by_role_in_room("client", room_id)):
                         await client.send_text(payload)
 
@@ -70,14 +68,50 @@ async def websocket_endpoint(  # 프런트에서 값가져오기
                     }))
                 continue
 
-            # 3) 그 외 텍스트는 같은 방 브로드캐스트(기존 동작 유지)
+            # 2) 새로운 15프레임 시퀀스 처리
+            if mtype == "hand_landmarks_sequence":
+                try:
+                    from . import main
+                    frame_sequence = data.get("frame_sequence")
+
+                    logger.info("hand_landmarks_sequence 수신, frames=%d", len(frame_sequence) if frame_sequence else 0)
+                    type_result, text, score = main.predict_landmarks_sequence(frame_sequence)
+
+                    result = {
+                        "type": "subtitle",
+                        "text": str(text),
+                        "confidence": float(score)
+                    }
+                    logger.info("시퀀스 추론 결과: %s (신뢰도: %.3f)", text, score)
+                    payload = json.dumps(result)
+
+                    for client in list(hub.by_role_in_room("client", room_id)):
+                        await client.send_text(payload)
+
+                except Exception:
+                    logger.exception("sequence_infer_error")
+                    await websocket.send_text(json.dumps({
+                        "type": "error",
+                        "message": "sequence_inference_failed"
+                    }))
+                continue
+
+            # 3) 연결 테스트 메시지 처리
+            if mtype == "connection_test":
+                logger.info("연결 테스트 수신: %s", data.get("message"))
+                await websocket.send_text(json.dumps({
+                    "type": "connection_test_response",
+                    "message": "백엔드 연결 확인됨"
+                }))
+                continue
+
+            # 4) 그 외 메시지는 브로드캐스트
             payload = json.dumps(data)
             for client in list(hub.in_room(room_id)):
                 if client is not websocket:
                     await client.send_text(payload)
-            continue
 
     except (WebSocketDisconnect, asyncio.TimeoutError):
         pass
     finally:
-	    await hub.remove(websocket)
+        await hub.remove(websocket)
