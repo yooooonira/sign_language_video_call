@@ -35,6 +35,7 @@ MODEL_PATH = os.getenv(
     "TFLITE_PATH",
     "/fastapp/AI_Language/models/multi_hand_gesture_classifier.tflite"
 )
+ALWAYS_EMIT = os.getenv("ALWAYS_EMIT_CAPTION", "") == "1"
 
 _interpreter = None
 _in_det = None
@@ -166,9 +167,11 @@ def predict_from_single_frame(points_21x2):
     try:
         x = _coerce_to_1x10x55(np.asarray(points_21x2, dtype=np.float32))
         idx, score = infer_any(x)
-        if score < MIN_CONF:
+        label = _label_from_idx(idx)
+        if score < MIN_CONF and not ALWAYS_EMIT:
             return "", score
-        return _label_from_idx(idx), score
+        return label, score
+
     except Exception:
         logger.exception("단일 프레임 추론 실패")
         return "", 0.0
@@ -184,9 +187,10 @@ def predict_from_sequence(frames_10x21x2):
         if expected is not None and got != expected:
             logger.warning("feature dim mismatch: got=%d expected=%d", got, expected)
         idx, score = infer_any(x)
-        if score < MIN_CONF:
+        label = _label_from_idx(idx)
+        if score < MIN_CONF and not ALWAYS_EMIT:
             return "", score
-        return _label_from_idx(idx), score
+        return label, score
     except Exception:
         logger.exception("시퀀스 추론 실패")
         return "", 0.0
