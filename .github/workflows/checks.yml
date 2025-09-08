@@ -18,7 +18,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 1. 테스트 (커버리지 포함)
+      # 1. 린트 체크
+      - name: Lint Check (flake8)
+        run: docker compose run --rm app sh -c "flake8"
+
+      # 2. 테스트 (커버리지 포함)
       - name: Run Tests with Coverage
         run: |
           docker compose run --rm app sh -c "
@@ -28,10 +32,6 @@ jobs:
             coverage html &&
             coverage report --fail-under=80
           "
-
-      # 2. 린트 체크
-      - name: Lint Check (flake8)
-        run: docker compose run --rm app sh -c "flake8"
 
       # 3. 타입 체크
       - name: Type Check (mypy)
