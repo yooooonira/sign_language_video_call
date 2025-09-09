@@ -39,6 +39,7 @@ class UserProfileTestCase(TestCase):
         self.assertEqual(profile.nickname, "testnickname")
         self.assertEqual(str(profile), "testnickname")
 
+
 def test_user_search_view(self):
     """UserSearchAPIView 간단 테스트"""
     # 테스트용 사용자와 프로필 생성
