@@ -24,7 +24,9 @@ class TranslateLogMiddleware(MiddlewareMixin):
             except Exception:
                 request._json = {}  # type: ignore
 
-    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+    def process_response(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> HttpResponse:
         if getattr(request, "_json", None) is not None:
             ms = int((time.time() - getattr(request, "_start_ts", time.time())) * 1000)
             translated: Optional[str] = None
@@ -40,11 +42,13 @@ class TranslateLogMiddleware(MiddlewareMixin):
             from django.conf import settings
 
             logger = logging.getLogger(getattr(settings, "APP_LOGGER", "app"))
-            logger.info({
-                "event": "translate",
-                "path": request.path,
-                "ms": ms,
-                "origin": mask(getattr(request, "_json", {})).get("message"),
-                "translated": translated,
-            })
+            logger.info(
+                {
+                    "event": "translate",
+                    "path": request.path,
+                    "ms": ms,
+                    "origin": mask(getattr(request, "_json", {})).get("message"),
+                    "translated": translated,
+                }
+            )
         return response

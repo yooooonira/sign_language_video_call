@@ -6,19 +6,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('friend', '0003_friend_pair_key_alter_friend_users_and_more'),
+        ("friend", "0003_friend_pair_key_alter_friend_users_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='friendrelations',
-            name='uniq_pending_any_direction',
+            model_name="friendrelations",
+            name="uniq_pending_any_direction",
         ),
         migrations.AddConstraint(
-            model_name='friendrelations',
-            constraint=models.UniqueConstraint(django.db.models.functions.comparison.Least(models.F('from_user'), models.F('to_user')), django.db.models.functions.comparison.Greatest(models.F('from_user'), models.F('to_user')), condition=models.Q(('status', 'PENDING')), name='uniq_pending_any_direction_v2'),
+            model_name="friendrelations",
+            constraint=models.UniqueConstraint(
+                django.db.models.functions.comparison.Least(
+                    models.F("from_user"), models.F("to_user")
+                ),
+                django.db.models.functions.comparison.Greatest(
+                    models.F("from_user"), models.F("to_user")
+                ),
+                condition=models.Q(("status", "PENDING")),
+                name="uniq_pending_any_direction_v2",
+            ),
         ),
     ]

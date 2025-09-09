@@ -6,25 +6,35 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('friend', '0002_alter_friendrelations_unique_together_and_more'),
+        ("friend", "0002_alter_friendrelations_unique_together_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='friend',
-            name='pair_key',
+            model_name="friend",
+            name="pair_key",
             field=models.CharField(blank=True, db_index=True, max_length=64, null=True),
         ),
         migrations.AlterField(
-            model_name='friend',
-            name='users',
-            field=models.ManyToManyField(related_name='friend', to=settings.AUTH_USER_MODEL),
+            model_name="friend",
+            name="users",
+            field=models.ManyToManyField(
+                related_name="friend", to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddConstraint(
-            model_name='friendrelations',
-            constraint=models.UniqueConstraint(django.db.models.functions.comparison.Least(models.F('from_user'), models.F('to_user')), django.db.models.functions.comparison.Greatest(models.F('from_user'), models.F('to_user')), condition=models.Q(('status', 'PENDING')), name='uniq_pending_any_direction'),
+            model_name="friendrelations",
+            constraint=models.UniqueConstraint(
+                django.db.models.functions.comparison.Least(
+                    models.F("from_user"), models.F("to_user")
+                ),
+                django.db.models.functions.comparison.Greatest(
+                    models.F("from_user"), models.F("to_user")
+                ),
+                condition=models.Q(("status", "PENDING")),
+                name="uniq_pending_any_direction",
+            ),
         ),
     ]

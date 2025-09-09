@@ -13,7 +13,7 @@ User = get_user_model()
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['nickname', 'profile_image_url']
+        fields = ["nickname", "profile_image_url"]
 
 
 class UserSimpleSerializer(serializers.ModelSerializer):
@@ -22,14 +22,14 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['user_id', 'email', 'profile']
+        fields = ["user_id", "email", "profile"]
 
     def get_profile(self, obj):
         # related_name이 'profile'이 아닐 수도 있으니 getattr로 안정 접근
-        p = getattr(obj, 'profile', None)
+        p = getattr(obj, "profile", None)
         if p:
             return ProfileSerializer(p, context=self.context).data
-        nickname = (obj.email.split("@")[0] if obj.email else "")
+        nickname = obj.email.split("@")[0] if obj.email else ""
         return {
             "nickname": nickname,
             "profile_image_url": None,
@@ -42,7 +42,7 @@ class FriendListSerializer(serializers.ModelSerializer):  # 친구 목록 조회
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'profile', 'cnt']
+        fields = ["id", "email", "profile", "cnt"]
 
 
 class FriendDetailSerializer(FriendListSerializer):  # 친구 프로필 조회
@@ -71,7 +71,9 @@ class SentRequestSerializer(serializers.ModelSerializer):  # 친추 보낸 목�
 
 
 class FriendRequestCreateSerializer(serializers.ModelSerializer):  # 친구 추가
-    to_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())  # to_user:8 --> 8user에서 친구추가
+    to_user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all()
+    )  # to_user:8 --> 8user에서 친구추가
 
     class Meta:
         model = FriendRelations
@@ -79,11 +81,9 @@ class FriendRequestCreateSerializer(serializers.ModelSerializer):  # 친구 추�
         read_only_fields = ["id", "status"]
 
     def create(self, validated_data):
-        me = self.context['request'].user
+        me = self.context["request"].user
         return FriendRelations.objects.create(
-            from_user=me,
-            to_user=validated_data['to_user'],
-            status='PENDING'
+            from_user=me, to_user=validated_data["to_user"], status="PENDING"
         )
 
 

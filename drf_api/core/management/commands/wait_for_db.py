@@ -10,6 +10,7 @@ from psycopg2 import OperationalError as Psycopg2Error
 
 class Command(BaseCommand):
     """Django command to wait for db"""
+
     def handle(self, *args, **options):
         """Entrypoint for command"""
         self.stdout.write("Waiting for database...")
@@ -17,7 +18,7 @@ class Command(BaseCommand):
         while db_up is False:
             try:
                 # check 함수는 데이터베이스 연결 상태를 확인하는 함수
-                self.check(databases=['default'])
+                self.check(databases=["default"])
                 db_up = True
             except (Psycopg2Error, OperationalError):
                 self.stdout.write("Database unavailable, waiting 1 second...")

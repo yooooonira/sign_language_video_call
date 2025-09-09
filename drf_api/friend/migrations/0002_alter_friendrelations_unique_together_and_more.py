@@ -5,19 +5,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('friend', '0001_initial'),
+        ("friend", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='friendrelations',
+            name="friendrelations",
             unique_together=set(),
         ),
         migrations.AddConstraint(
-            model_name='friendrelations',
-            constraint=models.UniqueConstraint(condition=models.Q(('status', 'PENDING')), fields=('from_user', 'to_user'), name='uniq_pending_per_direction'),
+            model_name="friendrelations",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("status", "PENDING")),
+                fields=("from_user", "to_user"),
+                name="uniq_pending_per_direction",
+            ),
         ),
     ]

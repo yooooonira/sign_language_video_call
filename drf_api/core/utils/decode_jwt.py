@@ -9,11 +9,11 @@ def verify_supabase_jwt(token):
             settings.SUPABASE_JWT_SECRET,
             algorithms=["HS256"],
             options={"verify_aud": False},
-            leeway=10
+            leeway=10,
         )
-        nickname = decoded.get("user_metadata").get('user_name')
+        nickname = decoded.get("user_metadata").get("user_name")
         if nickname is None:
-            nickname = decoded.get('sub')
+            nickname = decoded.get("sub")
 
         return {
             "nickname": nickname,

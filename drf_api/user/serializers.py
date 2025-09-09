@@ -8,10 +8,10 @@ from .models import Profile, User
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['nickname', 'profile_image_url', 'created_at']
+        fields = ["nickname", "profile_image_url", "created_at"]
 
     def validate_nickname(self, value):
-        user = self.context['request'].user
+        user = self.context["request"].user
         if Profile.objects.filter(nickname=value).exclude(user=user).exists():
             raise serializers.ValidationError("이미 사용 중인 닉네임입니다.")
         return value
@@ -47,12 +47,16 @@ class UserSearchSerializer(serializers.ModelSerializer):
             return None
 
         # 보낸 요청
-        sent = FriendRelations.objects.filter(from_user=request.user, to_user=obj, status="PENDING").exists()
+        sent = FriendRelations.objects.filter(
+            from_user=request.user, to_user=obj, status="PENDING"
+        ).exists()
         if sent:
             return "PENDING_SENT"
 
         # 받은 요청
-        received = FriendRelations.objects.filter(from_user=obj, to_user=request.user, status="PENDING").exists()
+        received = FriendRelations.objects.filter(
+            from_user=obj, to_user=request.user, status="PENDING"
+        ).exists()
         if received:
             return "PENDING_RECEIVED"
 

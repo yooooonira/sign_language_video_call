@@ -6,15 +6,16 @@ import call.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('call', '0003_callhistory_room_id'),
+        ("call", "0003_callhistory_room_id"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='callhistory',
-            name='room_id',
-            field=models.CharField(default=call.models.gen_room_id, max_length=22, unique=True),
+            model_name="callhistory",
+            name="room_id",
+            field=models.CharField(
+                default=call.models.gen_room_id, max_length=22, unique=True
+            ),
         ),
     ]

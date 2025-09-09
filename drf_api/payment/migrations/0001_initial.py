@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -15,16 +14,47 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='PaymentTransaction',
+            name="PaymentTransaction",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('payment_key', models.CharField(blank=True, max_length=100, null=True, unique=True)),
-                ('order_id', models.CharField(max_length=100, unique=True)),
-                ('amount', models.PositiveIntegerField()),
-                ('status', models.CharField(choices=[('READY', '결제 요청됨'), ('DONE', '결제 완료'), ('FAILED', '결제 실패'), ('CANCELED', '결제 취소')], default='READY', max_length=20)),
-                ('requested_at', models.DateTimeField(auto_now_add=True)),
-                ('confirmed_at', models.DateTimeField(blank=True, null=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "payment_key",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, unique=True
+                    ),
+                ),
+                ("order_id", models.CharField(max_length=100, unique=True)),
+                ("amount", models.PositiveIntegerField()),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("READY", "결제 요청됨"),
+                            ("DONE", "결제 완료"),
+                            ("FAILED", "결제 실패"),
+                            ("CANCELED", "결제 취소"),
+                        ],
+                        default="READY",
+                        max_length=20,
+                    ),
+                ),
+                ("requested_at", models.DateTimeField(auto_now_add=True)),
+                ("confirmed_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

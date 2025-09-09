@@ -25,7 +25,7 @@ from .models import PaymentTransaction
 logger = logging.getLogger(__name__)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class PaymentWebhookView(View):
     authentication_classes: List[Type[BaseAuthentication]] = []
     permission_classes: List[Type[BasePermission]] = []
@@ -39,8 +39,8 @@ class PaymentWebhookView(View):
             logger.info(f"Toss Payments Webhook received: {data}")
 
             # 필수 필드 확인
-            event_type = data.get('eventType')
-            payment_data = data.get('data', {})
+            event_type = data.get("eventType")
+            payment_data = data.get("data", {})
 
             if not event_type or not payment_data:
                 logger.error("Invalid webhook data received")
@@ -67,10 +67,10 @@ class PaymentWebhookView(View):
 
     def _handle_payment_status_changed(self, payment_data):
         """결제 상태 변경 처리"""
-        order_id = payment_data.get('orderId')
-        status_value = payment_data.get('status')
-        payment_key = payment_data.get('paymentKey')
-        amount = payment_data.get('totalAmount', 0)
+        order_id = payment_data.get("orderId")
+        status_value = payment_data.get("status")
+        payment_key = payment_data.get("paymentKey")
+        amount = payment_data.get("totalAmount", 0)
 
         if not order_id:
             logger.error("No orderId in payment data")
@@ -78,18 +78,20 @@ class PaymentWebhookView(View):
 
         try:
             with transaction.atomic():
-                payment_transaction = PaymentTransaction.objects.select_for_update().get(
-                    order_id=order_id
+                payment_transaction = (
+                    PaymentTransaction.objects.select_for_update().get(
+                        order_id=order_id
+                    )
                 )
 
                 # 상태가 이미 처리되었다면 중복 처리 방지
-                if payment_transaction.status == 'DONE' and status_value == 'DONE':
+                if payment_transaction.status == "DONE" and status_value == "DONE":
                     logger.info(f"Payment {order_id} already processed")
                     return
 
-                if status_value == 'DONE':
+                if status_value == "DONE":
                     # 결제 완료 처리
-                    payment_transaction.status = 'DONE'
+                    payment_transaction.status = "DONE"
                     payment_transaction.payment_key = payment_key
                     payment_transaction.amount = amount
                     payment_transaction.confirmed_at = timezone.now()
@@ -104,11 +106,13 @@ class PaymentWebhookView(View):
                     credit.last_updated = timezone.now()
                     credit.save()
 
-                    logger.info(f"Payment {order_id} completed. Added {credit_to_add} credits")
+                    logger.info(
+                        f"Payment {order_id} completed. Added {credit_to_add} credits"
+                    )
 
-                elif status_value in ['CANCELED', 'PARTIAL_CANCELED']:
+                elif status_value in ["CANCELED", "PARTIAL_CANCELED"]:
                     # 결제 취소 처리
-                    payment_transaction.status = 'CANCELED'
+                    payment_transaction.status = "CANCELED"
                     payment_transaction.save()
 
                     logger.info(f"Payment {order_id} canceled")
@@ -122,14 +126,14 @@ class PaymentWebhookView(View):
 
     def _handle_cancel_status_changed(self, payment_data):
         """결제 취소 처리"""
-        order_id = payment_data.get('orderId')
+        order_id = payment_data.get("orderId")
 
         if not order_id:
             return
 
         try:
             payment_transaction = PaymentTransaction.objects.get(order_id=order_id)
-            payment_transaction.status = 'CANCELED'
+            payment_transaction.status = "CANCELED"
             payment_transaction.save()
 
             logger.info(f"Payment {order_id} marked as canceled")
@@ -152,7 +156,9 @@ class PaymentPrepareView(APIView):
             amount=price,
             status="READY",
         )
-        return Response({"order_id": payment.order_id, "amount": payment.amount}, status=201)
+        return Response(
+            {"order_id": payment.order_id, "amount": payment.amount}, status=201
+        )
 
 
 class ConfirmPaymentView(APIView):
@@ -165,8 +171,10 @@ class ConfirmPaymentView(APIView):
         payment_key = data.get("paymentKey")
 
         if not order_id or not amount or not payment_key:
-            return Response({"error": "Missing required parameters"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Missing required parameters"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # 결제 확인 요청
         url = "https://api.tosspayments.com/v1/payments/confirm"
@@ -183,17 +191,16 @@ class ConfirmPaymentView(APIView):
             # 실패 시 결제 상태 업데이트
             try:
                 payment_transaction = PaymentTransaction.objects.get(
-                    order_id=order_id,
-                    user=request.user
+                    order_id=order_id, user=request.user
                 )
-                payment_transaction.status = 'FAILED'
+                payment_transaction.status = "FAILED"
                 payment_transaction.save()
             except PaymentTransaction.DoesNotExist:
                 pass
 
             return Response(
                 {"error": "Payment confirmation failed", "detail": res_json},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # 성공 시 webhook에서 최종 처리되므로 여기서는 응답만 반환

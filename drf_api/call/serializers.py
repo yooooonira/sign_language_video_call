@@ -12,14 +12,23 @@ class CallHistoryListSerializer(serializers.ModelSerializer):  # 통화 목록
 
     class Meta:
         model = CallHistory
-        fields = ["id", "caller", "receiver", "called_at", "started_at", "ended_at", "call_status"]
+        fields = [
+            "id",
+            "caller",
+            "receiver",
+            "called_at",
+            "started_at",
+            "ended_at",
+            "call_status",
+        ]
 
     def get_caller(self, obj):
         return {
             "id": obj.caller.id,
             "nickname": obj.caller.profile.nickname,
             "profile_image_url": obj.caller.profile.profile_image_url.url
-            if obj.caller.profile.profile_image_url else None
+            if obj.caller.profile.profile_image_url
+            else None,
         }
 
     def get_receiver(self, obj):
@@ -27,7 +36,8 @@ class CallHistoryListSerializer(serializers.ModelSerializer):  # 통화 목록
             "id": obj.receiver.id,
             "nickname": obj.receiver.profile.nickname,
             "profile_image_url": obj.receiver.profile.profile_image_url.url
-            if obj.receiver.profile.profile_image_url else None
+            if obj.receiver.profile.profile_image_url
+            else None,
         }
 
 
@@ -42,15 +52,25 @@ class CallHistoryDetailSerializer(serializers.ModelSerializer):  # 특정 통화
     class Meta:
         model = CallHistory
         fields = [
-            "id", "direction", "caller", "receiver", "call_status", "called_at", "duration_seconds",
-            "used_credits", "is_caller", "started_at", "ended_at"]
+            "id",
+            "direction",
+            "caller",
+            "receiver",
+            "call_status",
+            "called_at",
+            "duration_seconds",
+            "used_credits",
+            "is_caller",
+            "started_at",
+            "ended_at",
+        ]
         read_only_fields = fields
 
     def _is_caller(self, obj):
         user = self.context["request"].user
         return obj.caller == user
 
-    def get_is_caller(self, obj):   # 누가 걸었냐 T/F
+    def get_is_caller(self, obj):  # 누가 걸었냐 T/F
         return self._is_caller(obj)
 
     def get_direction(self, obj):
@@ -61,15 +81,17 @@ class CallHistoryDetailSerializer(serializers.ModelSerializer):  # 특정 통화
             "id": obj.caller.id,
             "nickname": obj.caller.profile.nickname,
             "profile_image_url": obj.caller.profile.profile_image_url.url
-            if obj.caller.profile.profile_image_url else None
+            if obj.caller.profile.profile_image_url
+            else None,
         }
 
     def get_receiver(self, obj):
         return {
             "id": obj.receiver.id,
             "nickname": obj.receiver.profile.nickname,
-            "profile_image_url":  obj.receiver.profile.profile_image_url.url
-            if obj.receiver.profile.profile_image_url else None
+            "profile_image_url": obj.receiver.profile.profile_image_url.url
+            if obj.receiver.profile.profile_image_url
+            else None,
         }
 
     def get_duration_seconds(self, obj):
@@ -128,7 +150,9 @@ class CallHistoryRecordSerializer(serializers.ModelSerializer):  # 통화 기록
                     {"non_field_errors": "연결된 통화 상태에서는 started_at과 ended_at이 모두 필요합니다."}
                 )
             if ended_at < started_at:
-                raise serializers.ValidationError({"ended_at": "ended_at은 started_at 이후여야 합니다."})
+                raise serializers.ValidationError(
+                    {"ended_at": "ended_at은 started_at 이후여야 합니다."}
+                )
 
         attrs["_receiver_obj"] = receiver
         return attrs
@@ -140,8 +164,6 @@ class CallHistoryRecordSerializer(serializers.ModelSerializer):  # 통화 기록
         validated_data.pop("receiver_id", None)
 
         obj = CallHistory.objects.create(
-            caller=caller,
-            receiver=receiver,
-            **validated_data
+            caller=caller, receiver=receiver, **validated_data
         )
         return obj

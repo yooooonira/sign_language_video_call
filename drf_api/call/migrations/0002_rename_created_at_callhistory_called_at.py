@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('call', '0001_initial'),
+        ("call", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='callhistory',
-            old_name='created_at',
-            new_name='called_at',
+            model_name="callhistory",
+            old_name="created_at",
+            new_name="called_at",
         ),
     ]

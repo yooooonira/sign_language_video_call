@@ -21,25 +21,24 @@ load_dotenv(BASE_DIR / ".env")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY','changeme')
-SUPABASE_JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET')
-SUPABASE_URL = os.environ.get('SUPABASE_URL')
-FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL')
-BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL')
-TOSS_SECRET_KEY = os.environ.get('TOSS_SECRET_KEY')
-DEBUG = bool(int(os.environ.get('DEBUG', 0)))
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "changeme")
+SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL")
+BACKEND_BASE_URL = os.environ.get("BACKEND_BASE_URL")
+TOSS_SECRET_KEY = os.environ.get("TOSS_SECRET_KEY")
+DEBUG = bool(int(os.environ.get("DEBUG", 0)))
 
 # 웹 푸시 알림 설정
-VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY_BASE64')
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY_BASE64")
 VAPID_CLAIMS = {"sub": "oscar2272@naver.com"}
 
 # 접속 허용 도메인
-ALLOWED_HOSTS = ["3.37.127.118",]
+ALLOWED_HOSTS = [
+    "3.37.127.118",
+]
 ALLOWED_HOSTS.extend(
-    filter(
-        None,
-        os.environ.get('DJANGO_ALLOWED_HOSTS','').split(',')
-    )
+    filter(None, os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(","))
 )
 # 프론트엔드에서 API 호출 허용 도메인.
 CORS_ALLOWED_ORIGINS = [
@@ -82,54 +81,53 @@ INSTALLED_APPS = [
     "notification",
     "subscription",
     "rest_framework",
-    'drf_spectacular',
+    "drf_spectacular",
     "django_prometheus",
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django_cleanup.apps.CleanupConfig',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django_cleanup.apps.CleanupConfig",
 ]
 
 MIDDLEWARE = [
     "drf_api.middleware.TranslateLogMiddleware",
-    "django_prometheus.middleware.PrometheusBeforeMiddleware", #요청 시작 타이머
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",  # 요청 시작 타이머
     "corsheaders.middleware.CorsMiddleware",
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "django_prometheus.middleware.PrometheusAfterMiddleware",# 응답 끝 타이머
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",  # 응답 끝 타이머
 ]
 
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],   # docker-compose 서비스 이름
-
+            "hosts": [("redis", 6379)],  # docker-compose 서비스 이름
         },
     },
 }
 
 
-ROOT_URLCONF = 'drf_api.urls'
+ROOT_URLCONF = "drf_api.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -152,12 +150,12 @@ ASGI_APPLICATION = "drf_api.asgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django_prometheus.db.backends.postgresql",# ← 기존 'django.db.backends.postgresql'에서 변경 //감싸는 형태라서 변경해도 된다
+        "ENGINE": "django_prometheus.db.backends.postgresql",  # ← 기존 'django.db.backends.postgresql'에서 변경 //감싸는 형태라서 변경해도 된다
         "HOST": os.environ.get("DB_HOST"),
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASS"),
-        "PORT": "5432",   #포트 추가
+        "PORT": "5432",  # 포트 추가
     }
 }
 
@@ -167,16 +165,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -184,9 +182,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -199,17 +197,17 @@ AUTH_USER_MODEL = "user.User"
 ASGI_APPLICATION = "app.asgi.application"
 
 # 브라우저에서 정적 파일에 접근할 때 사용하는 URL 경로
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 # 서버에서 실제 파일이 저장된 경로
-STATIC_ROOT = '/vol/web/static'
+STATIC_ROOT = "/vol/web/static"
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = '/vol/web/media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = "/vol/web/media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # DRF의 전역설정 (미설정시 여기서 설정한 값으로 사용)
@@ -224,5 +222,5 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-  "COMPONENT_SPLIT_REQUEST": True,
+    "COMPONENT_SPLIT_REQUEST": True,
 }

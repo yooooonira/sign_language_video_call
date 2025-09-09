@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -15,16 +14,48 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='CallHistory',
+            name="CallHistory",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('started_at', models.DateTimeField(blank=True, null=True)),
-                ('ended_at', models.DateTimeField(blank=True, null=True)),
-                ('used_credits', models.IntegerField(default=0)),
-                ('call_status', models.CharField(choices=[('ACCEPTED', '수락됨'), ('MISSED', '부재중'), ('REJECTED', '거절됨')], max_length=10)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('caller', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='outgoing_calls', to=settings.AUTH_USER_MODEL)),
-                ('receiver', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='incoming_calls', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("started_at", models.DateTimeField(blank=True, null=True)),
+                ("ended_at", models.DateTimeField(blank=True, null=True)),
+                ("used_credits", models.IntegerField(default=0)),
+                (
+                    "call_status",
+                    models.CharField(
+                        choices=[
+                            ("ACCEPTED", "수락됨"),
+                            ("MISSED", "부재중"),
+                            ("REJECTED", "거절됨"),
+                        ],
+                        max_length=10,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "caller",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="outgoing_calls",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "receiver",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="incoming_calls",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

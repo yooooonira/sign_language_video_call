@@ -7,8 +7,7 @@ from core.utils.generate_name import generate_unique_username
 from credit.models import Credits
 from user.models import Profile, User
 
-from .serializers import (ProfileSerializer, UserSearchSerializer,
-                          UserSerializer)
+from .serializers import ProfileSerializer, UserSearchSerializer, UserSerializer
 
 
 # 소셜 로그인/회원가입(profile)
@@ -17,14 +16,17 @@ class SocialSignupView(APIView):
         user = request.user
         nickname = getattr(user, "nickname", None)
         if not user.email:
-            return Response({"error": "Email not found in token"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Email not found in token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         profile_exists = Profile.objects.filter(user=user).exists()
 
         if profile_exists:
-            return Response({"message": "User already exists."},
-                            status=status.HTTP_200_OK)
+            return Response(
+                {"message": "User already exists."}, status=status.HTTP_200_OK
+            )
         if not nickname:
             nickname = generate_unique_username()
 
@@ -33,26 +35,28 @@ class SocialSignupView(APIView):
 
         Profile.objects.create(user=user, nickname=nickname)
         Credits.objects.get_or_create(user=user)
-        return Response({"message": "User profile created."},
-                        status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": "User profile created."}, status=status.HTTP_201_CREATED
+        )
 
 
 # 이메일 회원가입(profile)
 class EmailSignupView(APIView):
-
     def post(self, request):
         user = request.user
         nickname = getattr(user, "nickname", None)
 
         if not user or not user.email:
-            return Response({"error": "Invalid user or email"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid user or email"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         profile_exists = Profile.objects.filter(user=user).exists()
 
         if profile_exists:
-            return Response({"message": "User already exists."},
-                            status=status.HTTP_200_OK)
+            return Response(
+                {"message": "User already exists."}, status=status.HTTP_200_OK
+            )
 
         # nickname = none 일경우
         if not nickname:
@@ -78,13 +82,11 @@ class UserViewSet(viewsets.ViewSet):
         user = request.user
         profile = getattr(user, "profile", None)
         if not profile:
-            return Response({"detail": "Profile not found."},
-                            status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND
+            )
         serializer = ProfileSerializer(
-            profile,
-            data=request.data,
-            partial=True,
-            context={'request': request}
+            profile, data=request.data, partial=True, context={"request": request}
         )
         try:
             serializer.is_valid(raise_exception=True)
@@ -105,11 +107,11 @@ class UserSearchAPIView(generics.ListAPIView):
     serializer_class = UserSearchSerializer
 
     def get_queryset(self):
-        query = self.request.GET.get('q', '')
+        query = self.request.GET.get("q", "")
         if query:
             return User.objects.filter(
                 profile__nickname__icontains=query
-            ).select_related('profile')
+            ).select_related("profile")
         return User.objects.none()
 
     def get_serializer_context(self):

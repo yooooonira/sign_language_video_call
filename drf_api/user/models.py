@@ -2,8 +2,11 @@ import os
 import uuid
 from typing import Any, Optional
 
-from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
-                                        PermissionsMixin)
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.db import models
 
 
@@ -15,7 +18,9 @@ def profile_image_file_path(instance: Any, filename: str) -> str:
 
 class UserManager(BaseUserManager):
     # 사용자 생성 매니저
-    def create_user(self, email: str, password: Optional[str] = None, **extra_fields: Any) -> 'User':
+    def create_user(
+        self, email: str, password: Optional[str] = None, **extra_fields: Any
+    ) -> "User":
         if not email:
             raise ValueError("이메일은 필수입니다.")
         email = self.normalize_email(email)
@@ -27,7 +32,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email: str, password: str) -> 'User':
+    def create_superuser(self, email: str, password: str) -> "User":
         user = self.create_user(email=email, password=password)
         user.is_staff = True
         user.is_superuser = True
@@ -55,14 +60,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Profile(models.Model):
     # 프로필 모델
     user: models.OneToOneField = models.OneToOneField(
-            User,
-            on_delete=models.CASCADE,
-            related_name="profile"
-        )
+        User, on_delete=models.CASCADE, related_name="profile"
+    )
     nickname: models.CharField = models.CharField(max_length=50, unique=True, null=True)
-    profile_image_url: models.ImageField = models.ImageField(null=True,
-                                                             blank=True,
-                                                             upload_to=profile_image_file_path)
+    profile_image_url: models.ImageField = models.ImageField(
+        null=True, blank=True, upload_to=profile_image_file_path
+    )
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
 
     class Meta:

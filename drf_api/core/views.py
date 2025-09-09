@@ -18,8 +18,7 @@ class SupabaseJWTAuthentication(BaseAuthentication):
 
         email = user_info["email"]
         nickname = user_info["nickname"]
-        user, created = User.objects.get_or_create(email=email, defaults={
-        })
+        user, created = User.objects.get_or_create(email=email, defaults={})
         # user 객체에 nickname 임시 저장 (속성 추가)
         user.nickname = nickname
 

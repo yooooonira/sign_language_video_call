@@ -11,7 +11,10 @@ class CreditDetailView(APIView):
         try:
             credit = Credits.objects.get(user=request.user)
         except Credits.DoesNotExist:
-            return Response({"detail": "Credit account not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Credit account not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         serializer = CreditsSerializer(credit)
         return Response(serializer.data, status=status.HTTP_200_OK)

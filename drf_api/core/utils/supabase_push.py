@@ -4,7 +4,9 @@ import requests  # type: ignore
 from django.conf import settings
 
 
-def notify_user_via_supabase(receiver_supabase_id: str, room_id: str, caller_id: int) -> None:
+def notify_user_via_supabase(
+    receiver_supabase_id: str, room_id: str, caller_id: int
+) -> None:
     url = f"{settings.SUPABASE_URL}/realtime/v1/realtime?topic=user-{receiver_supabase_id}"
     payload: Dict[str, Any] = {
         "type": "call_request",

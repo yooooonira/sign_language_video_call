@@ -4,5 +4,7 @@ from django.db import models
 
 
 class PushSubscription(models.Model):
-    user: models.OneToOneField = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user: models.OneToOneField = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE
+    )
     subscription_info: jsonfield.JSONCharField = jsonfield.JSONField()

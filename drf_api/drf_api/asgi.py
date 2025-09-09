@@ -14,11 +14,11 @@ from django.core.asgi import get_asgi_application
 
 from call import routing as call_routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'drf_api.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "drf_api.settings")
 
-application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": URLRouter(
-        call_routing.websocket_urlpatterns
-    )
-})
+application = ProtocolTypeRouter(
+    {
+        "http": get_asgi_application(),
+        "websocket": URLRouter(call_routing.websocket_urlpatterns),
+    }
+)

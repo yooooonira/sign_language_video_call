@@ -20,6 +20,6 @@ class SaveSubscriptionView(APIView):
         # 유저와 연동해서 DB 저장
         PushSubscription.objects.update_or_create(
             user=request.user,
-            defaults={"subscription_info": json.dumps(subscription_info)}
+            defaults={"subscription_info": json.dumps(subscription_info)},
         )
         return Response({"status": "saved"})

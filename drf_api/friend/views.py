@@ -8,16 +8,19 @@ from rest_framework.views import APIView
 
 from .models import Friend, FriendRelations
 from .pagination import DefaultPagination
-from .serializers import (FriendDetailSerializer, FriendListSerializer,
-                          FriendRequestCreateSerializer,
-                          FriendRequestDetailSerializer,
-                          ReceivedRequestSerializer, SentRequestSerializer)
+from .serializers import (
+    FriendDetailSerializer,
+    FriendListSerializer,
+    FriendRequestCreateSerializer,
+    FriendRequestDetailSerializer,
+    ReceivedRequestSerializer,
+    SentRequestSerializer,
+)
 
 User = get_user_model()
 
 
 class FriendListView(generics.ListAPIView):  # 친구 목록 조회
-
     serializer_class = FriendListSerializer
     pagination_class = DefaultPagination
 
@@ -25,20 +28,16 @@ class FriendListView(generics.ListAPIView):  # 친구 목록 조회
         me = self.request.user  # me: 현재 요청자
 
         return (
-            User.objects
-            .filter(friend__users=me)
+            User.objects.filter(friend__users=me)
             .exclude(id=me.id)
-            .select_related('profile')
+            .select_related("profile")
             .annotate(
-                cnt=Count('friend', distinct=True),
-                last_friend_at=Max(
-                    'friend__created_at',
-                    filter=Q(friend__users=me)
-                )
+                cnt=Count("friend", distinct=True),
+                last_friend_at=Max("friend__created_at", filter=Q(friend__users=me)),
             )
             .distinct()
-            .order_by('-last_friend_at')
-            )
+            .order_by("-last_friend_at")
+        )
 
 
 class FriendRetrieveDeleteView(generics.RetrieveDestroyAPIView):  # 친구 프로필 조회, 친구 삭제
@@ -49,12 +48,9 @@ class FriendRetrieveDeleteView(generics.RetrieveDestroyAPIView):  # 친구 프�
         other_id = self.kwargs.get("pk")
 
         return (
-            User.objects
-            .filter(id=other_id, friend__users=me)
-            .select_related('profile')
-            .annotate(
-                created_at=Min('friend__created_at', filter=Q(friend__users=me))
-            )
+            User.objects.filter(id=other_id, friend__users=me)
+            .select_related("profile")
+            .annotate(created_at=Min("friend__created_at", filter=Q(friend__users=me)))
             .distinct()
             .first()
         )
@@ -73,9 +69,10 @@ class ReceivedRequestListView(generics.ListAPIView):  # 친추 받은 목록 조
 
     def get_queryset(self):
         return (
-            FriendRelations.objects  # friendrelation (친구관계)모델에서
-            .filter(to_user=self.request.user, status='PENDING')  # 수신자가 나일때 status가 pending이면
-            .select_related('from_user__profile')  # 발송자에 대한 정보를 가져와
+            FriendRelations.objects.filter(  # friendrelation (친구관계)모델에서
+                to_user=self.request.user, status="PENDING"
+            )  # 수신자가 나일때 status가 pending이면
+            .select_related("from_user__profile")  # 발송자에 대한 정보를 가져와
             .order_by("-id")
         )
 
@@ -91,9 +88,10 @@ class SentRequestListView(generics.ListAPIView):  # 친추 보낸 목록 조회
 
     def get_queryset(self):
         return (
-            FriendRelations.objects
-            .filter(from_user=self.request.user, status='PENDING')
-            .select_related('to_user__profile')
+            FriendRelations.objects.filter(
+                from_user=self.request.user, status="PENDING"
+            )
+            .select_related("to_user__profile")
             .order_by("-id")
         )
 
@@ -116,31 +114,37 @@ class FriendRequestCreateView(generics.CreateAPIView):  # 친구 추가
 
         # 내가 나한테
         if me.id == to_user.id:
-            return Response({
-                "outcome": "SELF_REQUEST",
-                "state": "INVALID",
-                "message": "자기 자신에게는 친구 요청을 보낼 수 없습니다."
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "outcome": "SELF_REQUEST",
+                    "state": "INVALID",
+                    "message": "자기 자신에게는 친구 요청을 보낼 수 없습니다.",
+                },
+                status=status.HTTP_200_OK,
+            )
 
         # 이미 친구
         friend_id = (
-            Friend.objects
-            .filter(users=me)
+            Friend.objects.filter(users=me)
             .filter(users=to_user)
-            .values_list('id', flat=True)
+            .values_list("id", flat=True)
             .first()
         )
         if friend_id:
-            return Response({
-                "outcome": "ALREADY_FRIENDS",
-                "state": "FRIENDS",
-                "friend_id": friend_id
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "outcome": "ALREADY_FRIENDS",
+                    "state": "FRIENDS",
+                    "friend_id": friend_id,
+                },
+                status=status.HTTP_200_OK,
+            )
 
         # 상대가 이미 친구 보낸 상태
         inbound = (
-            FriendRelations.objects
-            .filter(from_user=to_user, to_user=me, status="PENDING")
+            FriendRelations.objects.filter(
+                from_user=to_user, to_user=me, status="PENDING"
+            )
             .select_for_update()
             .first()
         )
@@ -153,38 +157,37 @@ class FriendRequestCreateView(generics.CreateAPIView):  # 친구 추가
 
             inbound.delete()  # PENDING 제거
 
-            return Response({
-                "outcome": "NOW_FRIENDS",
-                "state": "FRIENDS",
-                "friend_id": f.id
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {"outcome": "NOW_FRIENDS", "state": "FRIENDS", "friend_id": f.id},
+                status=status.HTTP_200_OK,
+            )
 
         # 내가 이미 친구 보낸 상태
-        outbound = (
-            FriendRelations.objects
-            .filter(from_user=me, to_user=to_user, status="PENDING")
-            .first()
-        )
+        outbound = FriendRelations.objects.filter(
+            from_user=me, to_user=to_user, status="PENDING"
+        ).first()
         if outbound:
-            return Response({
-                "outcome": "Already_outbound",
-                "state": "PENDING_outbound",
-                "outbound_request_id": outbound.id
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "outcome": "Already_outbound",
+                    "state": "PENDING_outbound",
+                    "outbound_request_id": outbound.id,
+                },
+                status=status.HTTP_200_OK,
+            )
 
         instance = serializer.save(from_user=me)
 
         out = FriendRequestDetailSerializer(
-            instance,
-            context=self.get_serializer_context()
-            )
+            instance, context=self.get_serializer_context()
+        )
         headers = self.get_success_headers({"id": instance.pk})
 
-        return Response({
-            "outcome": "created",
-            "state": "PENDING_outbound",
-            "request": out.data
-        }, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            {"outcome": "created", "state": "PENDING_outbound", "request": out.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers,
+        )
 
 
 class FriendRequestAcceptView(APIView):  # 친구 수락
@@ -192,9 +195,13 @@ class FriendRequestAcceptView(APIView):  # 친구 수락
     def post(self, request, pk):
         # 요청 행을 락으로 묶어 중복 생성 방지
         try:
-            fr = (FriendRelations.objects.select_for_update().get(id=pk, to_user=request.user, status='PENDING'))
+            fr = FriendRelations.objects.select_for_update().get(
+                id=pk, to_user=request.user, status="PENDING"
+            )
         except FriendRelations.DoesNotExist:
-            return Response({"detail": "요청 없음", "code": "404_REQUEST_NOT_FOUND"}, status=404)
+            return Response(
+                {"detail": "요청 없음", "code": "404_REQUEST_NOT_FOUND"}, status=404
+            )
 
         me = fr.to_user
         other = fr.from_user
@@ -213,11 +220,13 @@ class FriendRequestAcceptView(APIView):  # 친구 수락
 
 class FriendRequestRejectView(APIView):  # 친구 거절
     def post(self, request, pk):
-        updated = (FriendRelations.objects
-                   .filter(id=pk, to_user=request.user, status='PENDING')
-                   .update(status='REJECTED'))
+        updated = FriendRelations.objects.filter(
+            id=pk, to_user=request.user, status="PENDING"
+        ).update(status="REJECTED")
         if not updated:
-            return Response({"detail": "요청 없음", "code": "404_REQUEST_NOT_FOUND"}, status=404)
+            return Response(
+                {"detail": "요청 없음", "code": "404_REQUEST_NOT_FOUND"}, status=404
+            )
         return Response({"message": "친구 요청 거절됨"}, status=200)
 
 
@@ -227,9 +236,9 @@ class FriendRequestDestroyView(generics.DestroyAPIView):  # 친구 요청 취소
     def get_object(self):
         me = self.request.user
         other_id = self.kwargs["pk"]
-        obj = (FriendRelations.objects
-               .filter(id=other_id, status="PENDING", from_user=me)  # 대기중만
-               .first())
+        obj = FriendRelations.objects.filter(
+            id=other_id, status="PENDING", from_user=me
+        ).first()  # 대기중만
         if not obj:
             raise NotFound("취소할 보낸 요청이 없어요.")
         return obj
