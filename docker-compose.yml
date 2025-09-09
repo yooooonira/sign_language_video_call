@@ -11,6 +11,7 @@ services:
     volumes:
       - ./drf_api:/app
       - ./static:/vol/web
+    user: root
     command: >
       sh -c "python manage.py wait_for_db &&
              python manage.py migrate &&
@@ -36,37 +37,36 @@ services:
       - POSTGRES_USER=devuser
       - POSTGRES_PASSWORD=changeme
 
-  redis:  #메모리사용량 진단
+  redis: #메모리사용량 진단
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    
-  redis_exporter: 
+
+  redis_exporter:
     image: oliver006/redis_exporter
     command:
-      - '--redis.addr=redis:6379'
+      - "--redis.addr=redis:6379"
     ports:
-        - "9121:9121"
+      - "9121:9121"
     depends_on:
       - redis
 
-
   prometheus:
-    image: prom/prometheus    #프로메테우스의 최신 버전 이미지를 가져다 컨테니어 실행 
+    image: prom/prometheus #프로메테우스의 최신 버전 이미지를 가져다 컨테니어 실행
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml #로컬의 prometheus.yml 설정파일을 컨테이너 내부 /etc/prometheus/prometheus.yml 경로에 매핑.
       - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml #알람 룰을 정의한 파일을 컨테이너 내부로 연결.
     ports:
-      - "9090:9090"          #로컬(호스트) 9090 포트를 컨테이너의 9090 포트와 연결. 브라우저에서 http://localhost:9090
+      - "9090:9090" #로컬(호스트) 9090 포트를 컨테이너의 9090 포트와 연결. 브라우저에서 http://localhost:9090
 
   grafana:
-    image: grafana/grafana   #Grafana 최신 버전 이미지 사용.
+    image: grafana/grafana #Grafana 최신 버전 이미지 사용.
     ports:
-      - "3000:3000"          #로컬 3000번 포트와 컨테이너 3000번 포트를 매핑.
+      - "3000:3000" #로컬 3000번 포트와 컨테이너 3000번 포트를 매핑.
     depends_on:
       - prometheus
     volumes:
-      - grafana-storage:/var/lib/grafana  # 그라파나 데이터 저장 
+      - grafana-storage:/var/lib/grafana # 그라파나 데이터 저장
 
   alertmanager:
     image: prom/alertmanager
@@ -82,7 +82,7 @@ services:
       context: ./fastapi_api
       dockerfile: Dockerfile
     ports:
-      - "8001:8001"              
+      - "8001:8001"
     volumes:
       - ./fastapi_api:/app
     environment:
@@ -94,10 +94,7 @@ services:
       - REDIS_PORT=6379
       - PYTHONUNBUFFERED=1
 
-
 volumes:
   dev-db-data:
-  grafana-storage:    # 그라파나 데이터 저장 
-
-
+  grafana-storage: # 그라파나 데이터 저장
 
