@@ -18,10 +18,12 @@ from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class PaymentWebhookView(View):
     Authentication_classes = []  # 인증 비활성화
     permission_classes = []      # 권한 비활성화
+
     def post(self, request):
         try:
             # JSON 데이터 파싱
@@ -129,6 +131,7 @@ class PaymentWebhookView(View):
         except PaymentTransaction.DoesNotExist:
             logger.error(f"PaymentTransaction not found for orderId: {order_id}")
 
+
 # 결제 주문 생성
 class PaymentPrepareView(APIView):
     def post(self, request):
@@ -157,7 +160,7 @@ class ConfirmPaymentView(APIView):
 
         if not order_id or not amount or not payment_key:
             return Response({"error": "Missing required parameters"},
-                          status=status.HTTP_400_BAD_REQUEST)
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # 결제 확인 요청
         url = "https://api.tosspayments.com/v1/payments/confirm"

@@ -1,12 +1,16 @@
-import json, re, time
+import json
+import re
+import time
 from django.utils.deprecation import MiddlewareMixin
 from django.http import HttpRequest
 
 SAFE_PREFIX = "/api/translate"
 MASK = re.compile(r"(Authorization|token|password)", re.I)
 
+
 def mask(d: dict):
     return {k: ("***" if MASK.search(k) else v) for k, v in d.items()}
+
 
 class TranslateLogMiddleware(MiddlewareMixin):
     def process_request(self, request: HttpRequest):

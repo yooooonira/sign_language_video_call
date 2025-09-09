@@ -6,6 +6,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.http import JsonResponse
 from django.utils.timezone import now
 
+
 class PublicSchemaView(SpectacularAPIView):
     authentication_classes = []
 
@@ -13,8 +14,10 @@ class PublicSchemaView(SpectacularAPIView):
 class PublicSwaggerView(SpectacularSwaggerView):
     authentication_classes = []
 
+
 def health_check(request):
     return JsonResponse({"status": "ok", "time": now()})
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,8 +35,6 @@ urlpatterns = [
     path("", include("django_prometheus.urls")),
     path("health/", health_check, name="health_check"),
 ]
-
-
 
 
 # 개발 모드(DEBUG=True)에서 Django가 직접 업로드된 미디어 파일을 서빙하게 함
