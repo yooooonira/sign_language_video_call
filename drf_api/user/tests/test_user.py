@@ -5,6 +5,7 @@ from rest_framework import status
 # from unittest.mock import patch
 from user.models import User, Profile
 
+
 class UserProfileTestCase(TestCase):
     def setUp(self):
         """테스트 설정"""
