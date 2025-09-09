@@ -98,6 +98,7 @@ services:
     
   redis_exporter: #캐시?? (redis 직접 스크레이프하던 설정을 exporter로 바꿈)
     image: oliver006/redis_exporter
+    restart: always
     command:
       - '--redis.addr=redis:6379'
     ports:
