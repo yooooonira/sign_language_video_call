@@ -40,16 +40,16 @@ class UserProfileTestCase(TestCase):
         self.assertEqual(str(profile), "testnickname")
 
 
-def test_user_search_view(self):
-    """UserSearchAPIView 간단 테스트"""
-    # 테스트용 사용자와 프로필 생성
-    user = User.objects.create_user(email="search@example.com")
-    Profile.objects.create(user=user, nickname="searchtest")
+    def test_user_search_view(self):
+        """UserSearchAPIView 간단 테스트"""
+        # 테스트용 사용자와 프로필 생성
+        user = User.objects.create_user(email="search@example.com")
+        Profile.objects.create(user=user, nickname="searchtest")
 
-    # 사용자 로그인 (인증 추가)
-    self.client.force_authenticate(user=user)
+        # 사용자 로그인 (인증 추가)
+        self.client.force_authenticate(user=user)
 
-    url = reverse('user-search')
-    response = self.client.get(url, {'q': 'search'})
+        url = reverse('user-search')
+        response = self.client.get(url, {'q': 'search'})
 
-    self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
