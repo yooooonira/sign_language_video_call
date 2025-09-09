@@ -7,7 +7,8 @@ from core.utils.generate_name import generate_unique_username
 from credit.models import Credits
 from user.models import Profile, User
 
-from .serializers import ProfileSerializer, UserSearchSerializer, UserSerializer
+from .serializers import (ProfileSerializer, UserSearchSerializer,
+                          UserSerializer)
 
 
 # 소셜 로그인/회원가입(profile)

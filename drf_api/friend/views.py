@@ -8,14 +8,10 @@ from rest_framework.views import APIView
 
 from .models import Friend, FriendRelations
 from .pagination import DefaultPagination
-from .serializers import (
-    FriendDetailSerializer,
-    FriendListSerializer,
-    FriendRequestCreateSerializer,
-    FriendRequestDetailSerializer,
-    ReceivedRequestSerializer,
-    SentRequestSerializer,
-)
+from .serializers import (FriendDetailSerializer, FriendListSerializer,
+                          FriendRequestCreateSerializer,
+                          FriendRequestDetailSerializer,
+                          ReceivedRequestSerializer, SentRequestSerializer)
 
 User = get_user_model()
 

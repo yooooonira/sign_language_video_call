@@ -13,11 +13,9 @@ from subscription.models import PushSubscription
 
 from .models import CallHistory
 from .pagination import DefaultPagination
-from .serializers import (
-    CallHistoryDetailSerializer,
-    CallHistoryListSerializer,
-    CallHistoryRecordSerializer,
-)
+from .serializers import (CallHistoryDetailSerializer,
+                          CallHistoryListSerializer,
+                          CallHistoryRecordSerializer)
 from .utils import notify_user_via_webpush
 
 User = get_user_model()
