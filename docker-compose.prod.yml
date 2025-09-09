@@ -105,6 +105,10 @@ services:
         - "9121:9121"
     depends_on:
       - redis
+    networks:
+      - default         
+      - monitoring_net
+    
 
 volumes:
   postgres-data:
