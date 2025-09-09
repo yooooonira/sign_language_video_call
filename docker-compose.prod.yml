@@ -95,19 +95,22 @@ services:
       - monitoring_net
     ports:
       - "127.0.0.1:3000:3000"
-    
+
   redis_exporter: #캐시?? (redis 직접 스크레이프하던 설정을 exporter로 바꿈)
     image: oliver006/redis_exporter
+    restart: always
     command:
-      - '--redis.addr=redis:6379'
+      - "--redis.addr=redis:6379"
     ports:
-        - "9121:9121"
+      - "9121:9121"
     depends_on:
       - redis
+    networks:
+      - default
+      - monitoring_net
 
 volumes:
   postgres-data:
-  static-data:
   prometheus-data:
   grafana-data:
   alertmanager-data:

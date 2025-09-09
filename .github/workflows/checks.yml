@@ -1,21 +1,48 @@
----
-name: Checks
+name: CD
+
 on:
-  push:
-    branches:
-      - main # main 브랜치만
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
 jobs:
-  test-lint: # job 이름(이름 수정 가능)
-    runs-on: ubuntu-24.04
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Checkout # github -> ubuntu로 코드 가져오기 (로컬이 아니기때문에 가져와야함)
-        uses: actions/checkout@v2
-      - name: Test
-        run: docker compose run --rm app sh -c "python manage.py wait_for_db && python manage.py test"
-      - name: Lint
-        run: docker compose run --rm app sh -c "flake8"
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: EC2 배포
+        run: |
+          ssh -o StrictHostKeyChecking=yes ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -euo pipefail
+
+          cd "${{ secrets.PROJECT_DIR }}"
+
+          # 1) 최신 코드 가져오기
+          git fetch --all
+          git reset --hard origin/main
+
+          FILE="docker-compose.prod.yml"
+
+          # 2) 이전 컨테이너 정리
+          echo "[배포] 이전 컨테이너 종료 중..."
+          docker-compose -f $FILE down
+
+          # 3) 새 이미지 빌드 및 컨테이너 실행
+          echo "[배포] 새 컨테이너 실행 중..."
+          docker-compose -f $FILE up -d --build
+
+          # 4) 배포 상태 확인
+          echo "[확인] 서비스 상태:"
+          docker-compose -f $FILE ps
+
+          # 5) 사용하지 않는 이미지 정리
+          docker image prune -f
+          EOF
