@@ -1,48 +1,95 @@
 name: CI
-
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  quality-checks:
+    runs-on: ubuntu-24.04
     steps:
-      - name: Setup SSH
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 1. 린트 체크
+      - name: Lint Check (flake8)
+        run: docker compose run --rm app sh -c "flake8"
+
+      # 2. 테스트 (커버리지 포함)
+      - name: Run Tests with Coverage
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          docker compose run --rm app sh -c "
+            python manage.py wait_for_db &&
+            coverage run --source='drf_api' -m pytest -v &&
+            coverage xml &&
+            coverage html &&
+            coverage report --fail-under=80
+          "
 
-      - name: EC2 배포
-        run: |
-          ssh -o StrictHostKeyChecking=yes ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          set -euo pipefail
+      # 3. 타입 체크
+      - name: Type Check (mypy)
+        run: docker compose run --rm app sh -c "mypy . --ignore-missing-imports"
 
-          cd "${{ secrets.PROJECT_DIR }}"
+      # 4. 포맷 체크
+      - name: Format Check (black)
+        run: docker compose run --rm app sh -c "black --check ."
 
-          # 1) 최신 코드 가져오기
-          git fetch --all
-          git reset --hard origin/main
+      - name: Import Sort Check (isort)
+        run: docker compose run --rm app sh -c "isort --check-only ."
 
-          FILE="docker-compose.prod.yml"
+      # 5. 시큐리티 체크
+      - name: Security Check (bandit)
+        run: docker compose run --rm app sh -c "bandit -r . -f json -o bandit-report.json"
+        continue-on-error: true
 
-          # 2) 이전 컨테이너 정리
-          echo "[배포] 이전 컨테이너 종료 중..."
-          docker-compose -f $FILE down
+      - name: Dependency Security Check (safety)
+        run: docker compose run --rm app sh -c "safety check --json --output safety-report.json"
+        continue-on-error: true
 
-          # 3) 새 이미지 빌드 및 컨테이너 실행
-          echo "[배포] 새 컨테이너 실행 중..."
-          docker-compose -f $FILE up -d --build
+      # 6. 아티팩트 업로드 (간단한 방식)
+      - name: Upload Coverage XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
 
-          # 4) 배포 상태 확인
-          echo "[확인] 서비스 상태:"
-          docker-compose -f $FILE ps
+      - name: Upload Coverage HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov/
 
-          # 5) 사용하지 않는 이미지 정리
-          docker image prune -f
-          EOF
+      - name: Upload Security Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+
+      # 7. 테스트 결과 업로드
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      # 8. 커버리지 코멘트 (PR에만)
+      - name: Coverage Comment
+        if: github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          COVERAGE_FILE: coverage.xml
