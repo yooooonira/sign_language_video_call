@@ -31,7 +31,7 @@ ENV PATH="/scripts:/py/bin:$PATH"
 RUN adduser --disabled-password --gecos "" django-user && \
     mkdir -p /vol/web/media /vol/web/static && \
     mkdir -p /vol/web/media/uploads && \
-    chown -R django-user:django-user /vol /scripts && \
+    chown -R django-user:django-user /vol /scripts /app && \
     chmod -R 755 /vol && \
     chmod -R +x /scripts
 
