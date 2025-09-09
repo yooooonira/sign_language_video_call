@@ -1,5 +1,5 @@
 [run]
-source = drf_api
+source = .
 omit =
     */venv/*
     */env/*
