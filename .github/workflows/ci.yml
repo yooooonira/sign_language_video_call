@@ -46,11 +46,11 @@ jobs:
 
       # 5. 시큐리티 체크
       - name: Security Check (bandit)
-        run: docker compose run --rm app sh -c "bandit -r . -f json -o bandit-report.json"
+        run: docker compose run --rm app sh -c "python -m bandit -r ."
         continue-on-error: true
 
       - name: Dependency Security Check (safety)
-        run: docker compose run --rm app sh -c "safety check --json --output safety-report.json"
+        run: docker compose run --rm app sh -c "safety check --output text"
         continue-on-error: true
 
       # 6. 아티팩트 업로드 (간단한 방식)

@@ -1,9 +1,11 @@
+from django.contrib.auth import get_user_model  # user/mmodels.py
 from rest_framework import serializers
-from django.contrib.auth import get_user_model     # user/mmodels.py
-# from django.db.models import Count # 중복 친구쌍 대비
-from .models import FriendRelations
+
 from user.models import Profile
 from user.serializers import UserSerializer
+
+# from django.db.models import Count # 중복 친구쌍 대비
+from .models import FriendRelations
 
 User = get_user_model()
 

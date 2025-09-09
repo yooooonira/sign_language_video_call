@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import FriendRelations, Friend
+
+from .models import Friend, FriendRelations
 
 
 @admin.register(FriendRelations)

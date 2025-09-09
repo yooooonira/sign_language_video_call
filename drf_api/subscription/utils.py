@@ -1,7 +1,8 @@
 # utils.py
-from pywebpush import webpush, WebPushException
-from django.conf import settings
 import json
+
+from django.conf import settings
+from pywebpush import WebPushException, webpush
 
 
 def notify_user_via_webpush(subscription_info, caller_id, room_id):

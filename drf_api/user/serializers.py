@@ -1,6 +1,8 @@
-from .models import User, Profile
-from friend.models import Friend, FriendRelations
 from rest_framework import serializers
+
+from friend.models import Friend, FriendRelations
+
+from .models import Profile, User
 
 
 class ProfileSerializer(serializers.ModelSerializer):

@@ -1,19 +1,23 @@
 
-from .pagination import DefaultPagination
-from rest_framework import generics
-from rest_framework.views import APIView
-from .models import CallHistory
-from .serializers import CallHistoryListSerializer, CallHistoryDetailSerializer, CallHistoryRecordSerializer
-from django.db.models import Q
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.exceptions import AuthenticationFailed
 import uuid
-from rest_framework.response import Response
+
 from django.contrib.auth import get_user_model
-from .utils import notify_user_via_webpush
-from subscription.models import PushSubscription
-from django.utils import timezone
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from rest_framework import generics
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from subscription.models import PushSubscription
+
+from .models import CallHistory
+from .pagination import DefaultPagination
+from .serializers import (CallHistoryDetailSerializer,
+                          CallHistoryListSerializer,
+                          CallHistoryRecordSerializer)
+from .utils import notify_user_via_webpush
 
 User = get_user_model()
 

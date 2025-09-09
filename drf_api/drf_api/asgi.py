@@ -9,10 +9,10 @@ https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
 
 import os
 
-from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
-from call import routing as call_routing
+from django.core.asgi import get_asgi_application
 
+from call import routing as call_routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'drf_api.settings')
 

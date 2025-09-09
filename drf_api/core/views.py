@@ -1,7 +1,8 @@
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
-from user.models import User
+
 from core.utils.decode_jwt import verify_supabase_jwt
+from user.models import User
 
 
 class SupabaseJWTAuthentication(BaseAuthentication):

@@ -1,7 +1,8 @@
+from django.db.models import Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db.models import Count
-from .models import FriendRelations, Friend
+
+from .models import Friend, FriendRelations
 
 
 @receiver(post_save, sender=FriendRelations)

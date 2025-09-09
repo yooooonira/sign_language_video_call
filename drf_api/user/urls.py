@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 user_view = views.UserViewSet.as_view({

@@ -1,14 +1,14 @@
 from rest_framework import generics, status, viewsets
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from core.utils.generate_name import generate_unique_username
-from user.models import Profile, User
-from credit.models import Credits
-from .serializers import (
-  ProfileSerializer,
-  UserSerializer,
-  UserSearchSerializer)
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from core.utils.generate_name import generate_unique_username
+from credit.models import Credits
+from user.models import Profile, User
+
+from .serializers import (ProfileSerializer, UserSearchSerializer,
+                          UserSerializer)
 
 
 # 소셜 로그인/회원가입(profile)

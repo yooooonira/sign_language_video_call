@@ -1,18 +1,17 @@
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, Max, Min, Q
 from rest_framework import generics, status
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import FriendRelations, Friend
-from .serializers import (
-  FriendListSerializer, FriendDetailSerializer,
-  ReceivedRequestSerializer, SentRequestSerializer,
-  FriendRequestCreateSerializer,
-  FriendRequestDetailSerializer,
-)
+
+from .models import Friend, FriendRelations
 from .pagination import DefaultPagination
-from rest_framework.exceptions import NotFound
-from django.contrib.auth import get_user_model
+from .serializers import (FriendDetailSerializer, FriendListSerializer,
+                          FriendRequestCreateSerializer,
+                          FriendRequestDetailSerializer,
+                          ReceivedRequestSerializer, SentRequestSerializer)
 
 User = get_user_model()
 

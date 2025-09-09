@@ -1,28 +1,34 @@
-from core.utils import generate_order_id
 import base64
-import requests
-from django.conf import settings
 import json
 import logging
-from django.views.decorators.csrf import csrf_exempt
+from typing import List, Type
+
+import requests  # type: ignore
+from django.conf import settings
+from django.db import transaction
+from django.http import HttpResponse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.http import HttpResponse
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
-from .models import PaymentTransaction
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.permissions import BasePermission
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from core.utils import generate_order_id
 from credit.models import Credits
-from django.utils import timezone
-from django.db import transaction
+
+from .models import PaymentTransaction
 
 logger = logging.getLogger(__name__)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PaymentWebhookView(View):
-    Authentication_classes = []  # 인증 비활성화
-    permission_classes = []      # 권한 비활성화
+    authentication_classes: List[Type[BaseAuthentication]] = []
+    permission_classes: List[Type[BasePermission]] = []
 
     def post(self, request):
         try:
