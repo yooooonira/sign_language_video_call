@@ -1,0 +1,29 @@
+[run]
+source = .
+omit =
+    */venv/*
+    */env/*
+    manage.py
+    */settings/*
+    */migrations/*
+    */test*
+    drf_api/asgi.py
+    drf_api/wsgi.py
+    drf_api/middleware.py
+    */node_modules/*
+    .coverage
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+
+fail_under = 80
+
+[html]
+directory = htmlcov
