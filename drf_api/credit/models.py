@@ -17,4 +17,5 @@ class Credits(models.Model):
         verbose_name_plural = "Credits"
 
     def __str__(self) -> str:
-        return f"{self.user.username} - {self.remained_credit} credits"
+        user_identifier = getattr(self.user, 'email', f'User {self.user.id}')
+        return f"{user_identifier} - {self.remained_credit} credits"
