@@ -18,8 +18,6 @@ class CallConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
-        # 짧은 지연 후 새 사용자가 들어왔음을 알림
-        # 이는 클라이언트가 완전히 준비될 시간을 줍니다
         import asyncio
 
         await asyncio.sleep(0.5)

@@ -50,7 +50,7 @@ class PaymentWebhookView(View):
             if event_type == "PAYMENT_STATUS_CHANGED":
                 self._handle_payment_status_changed(payment_data)
             elif event_type == "PAYMENT_CANCELED":
-                self._handle_payment_canceled(payment_data)
+                self._handle_cancel_status_changed(payment_data)
             elif event_type == "PAYMENT_FAILED":
                 self._handle_payment_failed(payment_data)
             else:
@@ -151,7 +151,7 @@ class PaymentPrepareView(APIView):
             return Response({"detail": "Invalid credit_amount or price."}, status=400)
 
         payment = PaymentTransaction.objects.create(
-            order_id=str(generate_order_id(request.user.id)),
+            order_id=str(generate_order_id(str(request.user.id))),
             user=request.user,
             amount=price,
             status="READY",
