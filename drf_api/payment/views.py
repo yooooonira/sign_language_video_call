@@ -151,7 +151,7 @@ class PaymentPrepareView(APIView):
             return Response({"detail": "Invalid credit_amount or price."}, status=400)
 
         payment = PaymentTransaction.objects.create(
-            order_id=str(generate_order_id(str(request.user.id))),
+            order_id=str(generate_order_id.generate_order_id(str(request.user.id))),
             user=request.user,
             amount=price,
             status="READY",
