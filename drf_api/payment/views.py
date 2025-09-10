@@ -84,12 +84,12 @@ class PaymentWebhookView(View):
                     )
                 )
 
-                # 상태가 이미 처리되었다면 중복 처리 방지
-                if payment_transaction.status == "DONE" and status_value == "DONE":
-                    logger.info(f"Payment {order_id} already processed")
-                    return
-
                 if status_value == "DONE":
+                    # 이미 처리되었는지 확인 (중복 처리 방지)
+                    if payment_transaction.status == "DONE":
+                        logger.info(f"Payment {order_id} already processed")
+                        return
+
                     # 결제 완료 처리
                     payment_transaction.status = "DONE"
                     payment_transaction.payment_key = payment_key
@@ -107,7 +107,7 @@ class PaymentWebhookView(View):
                     credit.save()
 
                     logger.info(
-                        f"Payment {order_id} completed. Added {credit_to_add} credits"
+                        f"Payment {order_id} completed. Added {credit_to_add} credits to user {payment_transaction.user.id}"
                     )
 
                 elif status_value in ["CANCELED", "PARTIAL_CANCELED"]:
@@ -141,6 +141,23 @@ class PaymentWebhookView(View):
         except PaymentTransaction.DoesNotExist:
             logger.error(f"PaymentTransaction not found for orderId: {order_id}")
 
+    def _handle_payment_failed(self, payment_data):
+        """결제 실패 처리"""
+        order_id = payment_data.get("orderId")
+
+        if not order_id:
+            return
+
+        try:
+            payment_transaction = PaymentTransaction.objects.get(order_id=order_id)
+            payment_transaction.status = "FAILED"
+            payment_transaction.save()
+
+            logger.info(f"Payment {order_id} marked as failed")
+
+        except PaymentTransaction.DoesNotExist:
+            logger.error(f"PaymentTransaction not found for orderId: {order_id}")
+
 
 # 결제 주문 생성
 class PaymentPrepareView(APIView):
@@ -151,7 +168,7 @@ class PaymentPrepareView(APIView):
             return Response({"detail": "Invalid credit_amount or price."}, status=400)
 
         payment = PaymentTransaction.objects.create(
-            order_id=str(generate_order_id.generate_order_id(str(request.user.id))),
+            order_id=str(generate_order_id.generate_order_id(request.user.id)),
             user=request.user,
             amount=price,
             status="READY",
@@ -203,7 +220,38 @@ class ConfirmPaymentView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 성공 시 webhook에서 최종 처리되므로 여기서는 응답만 반환
+        # 성공 시 즉시 크레딧 충전 (웹훅이 오지 않을 경우 대비)
+        try:
+            with transaction.atomic():
+                payment_transaction = PaymentTransaction.objects.select_for_update().get(
+                    order_id=order_id, user=request.user
+                )
+
+                # 아직 처리되지 않은 경우에만 처리
+                if payment_transaction.status != "DONE":
+                    payment_transaction.status = "DONE"
+                    payment_transaction.payment_key = payment_key
+                    payment_transaction.amount = int(amount)
+                    payment_transaction.confirmed_at = timezone.now()
+                    payment_transaction.save()
+
+                    # 크레딧 충전
+                    credit_to_add = int(amount) // 1000
+                    credit = Credits.objects.select_for_update().get(
+                        user=request.user
+                    )
+                    credit.remained_credit += credit_to_add
+                    credit.last_updated = timezone.now()
+                    credit.save()
+
+                    logger.info(
+                        f"Payment {order_id} confirmed and {credit_to_add} credits added immediately"
+                    )
+
+        except Exception as e:
+            logger.error(f"Error processing payment confirmation: {str(e)}")
+            # 에러가 있어도 토스 응답은 반환 (웹훅에서 재처리 가능)
+
         return Response(res_json)
 
     def create_headers(self, secret_key):
