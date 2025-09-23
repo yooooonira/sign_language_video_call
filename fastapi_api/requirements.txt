@@ -1,0 +1,10 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.1
+websockets==12.0  # AI 워커용
+tensorflow==2.15.0  # 또는 tflite-runtime
+numpy==1.24.3
+tflite-runtime==2.14.0
+PyJWT==2.9.0
+
+
