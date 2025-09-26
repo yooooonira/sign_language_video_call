@@ -1,10 +1,11 @@
-from locust import HttpUser, task, between
-import random
-import requests
-from queue import Queue
-from dotenv import load_dotenv
 import os
+import random
+from queue import Queue
 from typing import Dict
+
+import requests
+from dotenv import load_dotenv
+from locust import HttpUser, between, task
 
 load_dotenv()  # .env 파일 로드
 
