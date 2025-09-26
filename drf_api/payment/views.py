@@ -219,8 +219,10 @@ class ConfirmPaymentView(APIView):
         # 성공 시 즉시 크레딧 충전 (웹훅이 오지 않을 경우 대비)
         try:
             with transaction.atomic():
-                payment_transaction = PaymentTransaction.objects.select_for_update().get(
-                    order_id=order_id, user=request.user
+                payment_transaction = (
+                    PaymentTransaction.objects.select_for_update().get(
+                        order_id=order_id, user=request.user
+                    )
                 )
 
                 # 아직 처리되지 않은 경우에만 처리
@@ -233,9 +235,7 @@ class ConfirmPaymentView(APIView):
 
                     # 크레딧 충전
                     credit_to_add = int(amount) // 1000
-                    credit = Credits.objects.select_for_update().get(
-                        user=request.user
-                    )
+                    credit = Credits.objects.select_for_update().get(user=request.user)
                     credit.remained_credit += credit_to_add
                     credit.last_updated = timezone.now()
                     credit.save()

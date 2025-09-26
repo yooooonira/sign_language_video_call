@@ -28,13 +28,10 @@ class NoteUser(HttpUser):
         auth_response = requests.post(
             f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
             headers={
-                "apikey": SUPABASE_ANON_KEY,   # anon key 사용
-                "Content-Type": "application/json"
+                "apikey": SUPABASE_ANON_KEY,  # anon key 사용
+                "Content-Type": "application/json",
             },
-            json={
-                "email": self.user["email"],
-                "password": self.user["password"]
-            }
+            json={"email": self.user["email"], "password": self.user["password"]},
         )
 
         if auth_response.status_code == 200:
@@ -47,7 +44,9 @@ class NoteUser(HttpUser):
                 "Content-Type": "application/json",
             }
         else:
-            raise Exception(f"Failed to login as {self.user['email']} – {auth_response.text}")
+            raise Exception(
+                f"Failed to login as {self.user['email']} – {auth_response.text}"
+            )
 
     @task(1)
     def explore_mypage(self):
