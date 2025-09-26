@@ -49,7 +49,7 @@ class Friend(models.Model):  # 친구 관계 T
     pair_key: models.CharField = models.CharField(
         max_length=64, null=True, blank=True, db_index=True
     )
-    
+
     # class Meta:
     #         indexes = [
     #             models.Index(fields=['-created_at'], name='friend_created_at_desc_idx'),

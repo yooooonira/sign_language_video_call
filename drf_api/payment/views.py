@@ -106,10 +106,6 @@ class PaymentWebhookView(View):
                     credit.last_updated = timezone.now()
                     credit.save()
 
-                    logger.info(
-                        f"Payment {order_id} completed. Added {credit_to_add} credits to user {payment_transaction.user.id}"
-                    )
-
                 elif status_value in ["CANCELED", "PARTIAL_CANCELED"]:
                     # 결제 취소 처리
                     payment_transaction.status = "CANCELED"

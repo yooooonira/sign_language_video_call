@@ -13,6 +13,8 @@ SUPABASE_ANON_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 USER_CREDENTIALS = Queue()
 for i in range(1, 11):
     USER_CREDENTIALS.put({"email": f"test{i}@naver.com", "password": "123456"})
+
+
 class NoteUser(HttpUser):
     wait_time = between(1, 3)
     note_ids = []  # 테스트용 노트 ID 목록
@@ -45,57 +47,32 @@ class NoteUser(HttpUser):
                 "Content-Type": "application/json",
             }
         else:
-            raise Exception(f"Failed to login as {self.user['email']} – {auth_response.text}") 
-
-
-    # def on_stop(self):
-    #     if hasattr(self, "created_note_id"):
-    #         response = self.client.delete(f"/api/notes/{self.created_note_id}/delete/")
-    #         if response.status_code != 204:
-    #             print(f"❌ 노트 삭제 실패 (id={self.created_note_id}) - status {response.status_code}")
-    #         else:
-    #             print(f"✅ 노트 삭제 완료 (id={self.created_note_id})")
-
-
+            raise Exception(f"Failed to login as {self.user['email']} – {auth_response.text}")
 
     @task(1)
     def explore_mypage(self):
         self.client.get("/api/friends/")
 
+    @task(1)
+    def get_received_requests(self):
+        """친구 요청 받은 목록 조회"""
+        self.client.get("/api/friends/requests/received/")
 
-    # @task(1)
-    # def explore_create_friend(self):
-    #     self.client.get("/api/friends/requests/")
+    @task(1)
+    def get_sent_requests(self):
+        """친구 요청 보낸 목록 조회"""
+        self.client.get("/api/friends/requests/sent/")
 
-    # @task(2)
-    # def get_note_detail(self):
-    #     if self.note_ids:
-    #         note_id = self.created_note_id
-    #         self.client.get(f"/api/notes/{note_id}/")
-
-    # @task(1)
-    # def get_note_home(self):
-    #     params = [
-    #         {"type": "all", "sort": "recent"},
-    #         {"type": "shared", "sort": "likes"},
-    #         {"type": "public", "sort": "views"},
-    #         {"type": "private", "sort": "comments"}
-    #     ]
-    #     param = random.choice(params)
-    #     self.client.get("/api/notes/home/", params=param)
-
-    # @task(1)
-    # def update_note(self):
-    #     if self.note_ids:
-    #         note_id = self.created_note_id
-    #         data = {
-    #             "file_name": f"update Note {random.randint(1, 1000)}",
-    #             "title": f"update Title {random.randint(1, 1000)}",
-    #             "content": [
-    #                 {"type": "paragraph", "content": [{"type": "text", "text": "수정된 내용입니다."}]},
-    #                 {"type": "paragraph"}
-    #             ]
-    #         }
-    #         self.client.patch(f"/api/notes/{note_id}/edit/", json=data)
-
-
+    @task(1)
+    def get_friend_detail(self):
+        """친구 프로필 상세 조회"""
+        # 먼저 친구 목록을 가져와서 랜덤하게 한 명 선택
+        response = self.client.get("/api/friends/")
+        if response.status_code == 200:
+            friends_data = response.json()
+            # pagination이 적용되어 있으므로 results 키에서 데이터 추출
+            if friends_data.get("results") and len(friends_data["results"]) > 0:
+                friend = random.choice(friends_data["results"])
+                friend_id = friend.get("id")
+                if friend_id:
+                    self.client.get(f"/api/friends/{friend_id}/")
