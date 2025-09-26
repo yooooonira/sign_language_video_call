@@ -4,7 +4,7 @@ import requests
 from queue import Queue
 from dotenv import load_dotenv
 import os
-from typing import List, Dict, Any
+from typing import Dict
 
 load_dotenv()  # .env 파일 로드
 
@@ -14,6 +14,7 @@ SUPABASE_ANON_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 USER_CREDENTIALS: Queue[Dict[str, str]] = Queue()
 for i in range(1, 11):
     USER_CREDENTIALS.put({"email": f"test{i}@naver.com", "password": "123456"})
+
 
 class NoteUser(HttpUser):
     wait_time = between(1, 3)
