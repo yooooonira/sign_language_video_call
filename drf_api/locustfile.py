@@ -62,17 +62,3 @@ class NoteUser(HttpUser):
     def get_sent_requests(self):
         """친구 요청 보낸 목록 조회"""
         self.client.get("/api/friends/requests/sent/")
-
-    @task(1)
-    def get_friend_detail(self):
-        """친구 프로필 상세 조회"""
-        # 먼저 친구 목록을 가져와서 랜덤하게 한 명 선택
-        response = self.client.get("/api/friends/")
-        if response.status_code == 200:
-            friends_data = response.json()
-            # pagination이 적용되어 있으므로 results 키에서 데이터 추출
-            if friends_data.get("results") and len(friends_data["results"]) > 0:
-                friend = random.choice(friends_data["results"])
-                friend_id = friend.get("id")
-                if friend_id:
-                    self.client.get(f"/api/friends/{friend_id}/")
