@@ -8,7 +8,7 @@ public_key.pem
 # C extensions
 *.so
 # locustfile
-locustfile.py
+
 # Distribution / packaging
 .Python
 build/
