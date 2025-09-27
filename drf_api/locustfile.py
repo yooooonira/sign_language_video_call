@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 from locust import HttpUser, between, task
 
@@ -22,12 +23,12 @@ class NoteUser(HttpUser):
 
     @task
     def explore_mypage(self):
-        self.client.get(f"{SUPABASE_URL}/api/friends/")
+        self.client.get("/api/friends/")
 
     @task
     def get_received_requests(self):
-        self.client.get(f"{SUPABASE_URL}/api/friends/requests/received/")
+        self.client.get("/api/friends/requests/received/")
 
     @task
     def get_sent_requests(self):
-        self.client.get(f"{SUPABASE_URL}/api/friends/requests/sent/")
+        self.client.get("/api/friends/requests/sent/")
