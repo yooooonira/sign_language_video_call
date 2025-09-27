@@ -1,46 +1,33 @@
 import os
-import requests
+from dotenv import load_dotenv
 from locust import HttpUser, between, task
+
+load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_ACCESS_TOKEN = os.getenv("SUPABASE_ACCESS_TOKEN")  # 미리 발급받은 토큰
 
-EMAIL = "test1@naver.com"
-PASSWORD = "123456"
 
 class NoteUser(HttpUser):
-    wait_time = between(1, 3)
+    wait_time = between(0.1, 0.5)
 
     def on_start(self):
-        # 로그인해서 토큰 받아오기
-        resp = requests.post(
-            f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
-            headers={
-                "apikey": SUPABASE_ANON_KEY,
-                "Content-Type": "application/json",
-            },
-            json={"email": EMAIL, "password": PASSWORD},
-        )
-        if resp.status_code != 200:
-            raise Exception(f"Failed login: {resp.text}")
-
-        access_token = resp.json()["access_token"]
-
-        # Locust 요청 헤더에 넣기
+        # Locust 요청 헤더에 미리 발급받은 토큰 넣기
         self.client.headers = {
-            "Authorization": f"Bearer {access_token}",
+            "Authorization": f"Bearer {SUPABASE_ACCESS_TOKEN}",
             "apikey": SUPABASE_ANON_KEY,
             "Content-Type": "application/json",
         }
 
     @task
     def explore_mypage(self):
-        self.client.get("/api/friends/")
+        self.client.get(f"{SUPABASE_URL}/api/friends/")
 
     @task
     def get_received_requests(self):
-        self.client.get("/api/friends/requests/received/")
+        self.client.get(f"{SUPABASE_URL}/api/friends/requests/received/")
 
     @task
     def get_sent_requests(self):
-        self.client.get("/api/friends/requests/sent/")
+        self.client.get(f"{SUPABASE_URL}/api/friends/requests/sent/")
