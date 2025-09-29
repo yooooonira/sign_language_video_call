@@ -3,7 +3,8 @@
 청각장애인과 비장애인이 원활하게 소통할 수 있는 **화상통화 서비스**입니다.  
 사용자의 수어는 **자동으로 인식**되어 **실시간 자막**으로 표시됩니다.  
 
-<img width="1200" height="700" alt="서비스 시연 화면" src="https://github.com/user-attachments/assets/f40ac6f1-ae7d-4da8-99bf-23ef4aa50f74" />
+<!-- <img width="1200" height="700" alt="서비스 시연 화면" src="https://github.com/user-attachments/assets/f40ac6f1-ae7d-4da8-99bf-23ef4aa50f74" /> -->
+<img src="./orange_readme.png">
 
 - **배포 URL** : [https://sign-language-video-call-frontend.vercel.app](https://sign-language-video-call-frontend.vercel.app)
 
@@ -85,7 +86,8 @@
 <h2 align="left">🖼️ 아키텍처 다이어그램</h2>
 
 
-![readme용아키텍처_compressed](https://github.com/user-attachments/assets/099248a6-e908-49c6-bf13-c30ad140d022)
+<!-- ![readme용아키텍처_compressed](https://github.com/user-attachments/assets/099248a6-e908-49c6-bf13-c30ad140d022) -->
+<img src="./readme용아키텍처_compressed.jpg">
 ### 구성 요소 설명
 - **Frontend (React)** : WebRTC로 영상/음성 전송, WebSocket으로 자막(수어→텍스트) 스트림 송수신  
 - **Nginx** : TLS 종료 + 라우팅 — `/api/**` → Django/DRF, `/ai/**` · `/ws/**` → FastAPI  

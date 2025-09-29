@@ -4,7 +4,22 @@ import logging
 # ignore unused import
 from channels.generic.websocket import AsyncWebsocketConsumer
 
+import time
+from prometheus_client import Gauge, Histogram #현재 접속사 수, 지연시간 
+
 logger = logging.getLogger(__name__)
+
+# 현재 접속자 수
+ws_active_connections = Gauge(
+    "ws_active_connections", "Number of active WebSocket connections"
+)
+
+# 메시지 처리 지연 시간 (초)
+ws_message_latency = Histogram(
+    "ws_message_latency_seconds",
+    "WebSocket message processing latency (seconds)",
+    buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5],
+)
 
 
 class CallConsumer(AsyncWebsocketConsumer):
@@ -14,6 +29,8 @@ class CallConsumer(AsyncWebsocketConsumer):
         self.group_name = f"call_{self.room_id}"
 
         logger.info(f"User {self.user_id} connecting to room {self.room_id}")
+
+        ws_active_connections.inc()  # 접속자 수 증가
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
@@ -34,6 +51,8 @@ class CallConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         logger.info(f"User {self.user_id} disconnecting from room {self.room_id}")
 
+        ws_active_connections.dec()  # 접속자 수 감소
+
         # 다른 사용자들에게 사용자가 나갔음을 알림
         await self.channel_layer.group_send(
             self.group_name,
@@ -47,6 +66,7 @@ class CallConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data):
+        start = time.perf_counter()
         try:
             data = json.loads(text_data)
             msg_type = data.get("type")
@@ -83,6 +103,9 @@ class CallConsumer(AsyncWebsocketConsumer):
             logger.error(f"Invalid JSON received from user {self.user_id}")
         except Exception as e:
             logger.error(f"Error processing message from user {self.user_id}: {e}")
+        finally:
+            duration = time.perf_counter() - start
+            ws_message_latency.observe(duration)
 
     async def signal_message(self, event):
         # sender 제외하고 모두에게 전달
