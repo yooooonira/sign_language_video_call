@@ -42,10 +42,13 @@ groups:
     expr: |
       histogram_quantile(
         0.99,
-        sum by (le) (rate(django_http_requests_latency_seconds_bucket[30s]))
+        sum by (le) (rate(django_http_requests_latency_including_middlewares_seconds_bucket[1m]))
       ) > 1
     labels:
       severity: critical
     annotations:
       summary: "P99 응답시간 1s 초과"
       description: "P99 응답시간이 1초를 넘었습니다."
+
+
+
