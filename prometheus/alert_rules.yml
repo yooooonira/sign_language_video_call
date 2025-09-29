@@ -37,14 +37,13 @@ groups:
       summary: "5xx 초당 실패 건수 > 0.5"
       description: "5xx가 초당 0.5건(평균) 이상 발생 중."
 
-  # A-4. P95 응답시간 > 1초 (지연시간 감지)
+  # A-4. P99 응답시간 > 1초 (지연시간 감지)
 - alert: HighLatencyP99
   expr: |
     histogram_quantile(
       0.99,
-      sum by (le) (rate(django_http_requests_latency_seconds_bucket[5m]))
+      sum by (le) (rate(django_http_requests_latency_seconds_bucket[30s]))
     ) > 1
-  for: 0m   # 바로 트리거 (지연 없음)
   labels:
     severity: critical
   annotations:
