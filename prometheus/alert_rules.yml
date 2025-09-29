@@ -39,16 +39,16 @@ groups:
 
   # A-4. P99 응답시간 > 1초 (지연시간 감지)
   - alert: HighLatencyP99
-  expr: |
-    histogram_quantile(
-      0.99,
-      sum by (le) (irate(django_http_requests_latency_seconds_by_view_method_bucket[1m]))
-    ) > 1
-    labels:
-      severity: critical
-    annotations:
-      summary: "P99 응답시간 1s 초과"
-      description: "P99 응답시간이 1초를 넘었습니다."
+    expr: |
+      histogram_quantile(
+        0.99,
+        sum by (le) (irate(django_http_requests_latency_seconds_by_view_method_bucket[1m]))
+      ) > 1
+      labels:
+        severity: critical
+      annotations:
+        summary: "P99 응답시간 1s 초과"
+        description: "P99 응답시간이 1초를 넘었습니다."
 
 
 
