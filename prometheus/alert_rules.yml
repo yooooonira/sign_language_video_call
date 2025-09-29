@@ -49,4 +49,4 @@ groups:
     severity: critical
   annotations:
     summary: "P99 응답시간 1s 초과"
-    description: "최근 5분간 P99 응답시간이 1초를 넘었습니다."
+    description: "P99 응답시간이 1초를 넘었습니다."
