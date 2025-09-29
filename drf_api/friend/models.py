@@ -35,10 +35,10 @@ class FriendRelations(models.Model):  # 친추 T
             ),
         ]
 
-        # indexes = [
-        #     models.Index(fields=['to_user', 'status', '-id'],name='friendreq_received_idx'),
-        #     models.Index(fields=['from_user', 'status', '-id'],name='friendreq_sent_idx'),
-        # ]
+        indexes = [
+            models.Index(fields=['to_user', 'status', '-id'], name='friendreq_received_idx'),
+            models.Index(fields=['from_user', 'status', '-id'], name='friendreq_sent_idx'),
+        ]
 
 
 class Friend(models.Model):  # 친구 관계 T
@@ -50,7 +50,7 @@ class Friend(models.Model):  # 친구 관계 T
         max_length=64, null=True, blank=True, db_index=True
     )
 
-    # class Meta:
-    #         indexes = [
-    #             models.Index(fields=['-created_at'], name='friend_created_at_desc_idx'),
-    #         ]
+    class Meta:
+        indexes = [
+            models.Index(fields=['-created_at'], name='friend_created_at_desc_idx'),
+        ]
