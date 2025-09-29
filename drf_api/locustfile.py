@@ -1,30 +1,63 @@
 import os
+import random
+from typing import Dict, List
+
+import requests
 from dotenv import load_dotenv
 from locust import HttpUser, between, task
+
 load_dotenv()
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-SUPABASE_ACCESS_TOKEN = os.getenv("SUPABASE_ACCESS_TOKEN")  # 미리 발급받은 토큰
+
+USER_CREDENTIALS: List[Dict[str, str]] = []
+for i in range(1, 21):
+    USER_CREDENTIALS.append({"email": f"test{i}@naver.com", "password": "123456"})
+
+
 class NoteUser(HttpUser):
     wait_time = between(0.1, 0.5)
+
     def on_start(self):
-        # Locust 요청 헤더에 미리 발급받은 토큰 넣기
-        self.client.headers = {
-            "Authorization": f"Bearer {SUPABASE_ACCESS_TOKEN}",
-            "apikey": SUPABASE_ANON_KEY,
-            "Content-Type": "application/json",
-        }
-    @task
+        if USER_CREDENTIALS:
+            self.user = random.choice(USER_CREDENTIALS)
+        else:
+            raise Exception("No test users available")
+
+        auth_response = requests.post(
+            f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
+            headers={
+                "apikey": SUPABASE_ANON_KEY,
+                "Content-Type": "application/json",
+            },
+            json={"email": self.user["email"], "password": self.user["password"]},
+        )
+
+        if auth_response.status_code == 200:
+            self.token = auth_response.json().get("access_token")
+            self.client.headers = {
+                "Authorization": f"Bearer {self.token}",
+                "apikey": SUPABASE_ANON_KEY,
+                "Content-Type": "application/json",
+            }
+        else:
+            raise Exception(
+                f"Failed to login as {self.user['email']} - {auth_response.text}"
+            )
+
+    @task(1)
     def explore_mypage(self):
         self.client.get("/api/friends/")
-    @task
+
+    @task(1)
     def get_received_requests(self):
+        """친구 요청 받은 목록 조회"""
         self.client.get("/api/friends/requests/received/")
-    @task
+
+    @task(1)
     def get_sent_requests(self):
+        """친구 요청 보낸 목록 조회"""
         self.client.get("/api/friends/requests/sent/")
-
-
-
 
 
