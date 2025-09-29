@@ -38,14 +38,14 @@ groups:
       description: "5xx가 초당 0.5건(평균) 이상 발생 중."
 
   # A-4. P99 응답시간 > 1초 (지연시간 감지)
-- alert: HighLatencyP99
-  expr: |
-    histogram_quantile(
-      0.99,
-      sum by (le) (rate(django_http_requests_latency_seconds_bucket[30s]))
-    ) > 1
-  labels:
-    severity: critical
-  annotations:
-    summary: "P99 응답시간 1s 초과"
-    description: "P99 응답시간이 1초를 넘었습니다."
+  - alert: HighLatencyP99
+    expr: |
+      histogram_quantile(
+        0.99,
+        sum by (le) (rate(django_http_requests_latency_seconds_bucket[30s]))
+      ) > 1
+    labels:
+      severity: critical
+    annotations:
+      summary: "P99 응답시간 1s 초과"
+      description: "P99 응답시간이 1초를 넘었습니다."
