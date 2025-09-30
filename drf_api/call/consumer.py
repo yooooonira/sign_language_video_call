@@ -6,12 +6,15 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 import time
 from prometheus_client import Gauge, Histogram #현재 접속사 수, 지연시간 
+from django_prometheus.exports import ExportRegistry
 
 logger = logging.getLogger(__name__)
+registry = ExportRegistry()
 
 # 현재 접속자 수
 ws_active_connections = Gauge(
-    "ws_active_connections", "Number of active WebSocket connections"
+    "ws_active_connections", "Number of active WebSocket connections",
+    registry=registry,
 )
 
 # 메시지 처리 지연 시간 (초)
@@ -19,6 +22,7 @@ ws_message_latency = Histogram(
     "ws_message_latency_seconds",
     "WebSocket message processing latency (seconds)",
     buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5],
+    registry=registry,
 )
 
 
