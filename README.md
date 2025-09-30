@@ -4,7 +4,7 @@
 사용자의 수어는 **자동으로 인식**되어 **실시간 자막**으로 표시됩니다.  
 
 
-<img src="./Group_195.png">
+<img src="./Group_195_1.png">
 
 - **배포 URL** : [https://sign-language-video-call-frontend.vercel.app](https://sign-language-video-call-frontend.vercel.app)
 
