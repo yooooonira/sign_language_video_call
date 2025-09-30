@@ -3,8 +3,8 @@
 청각장애인과 비장애인이 원활하게 소통할 수 있는 **화상통화 서비스**입니다.  
 사용자의 수어는 **자동으로 인식**되어 **실시간 자막**으로 표시됩니다.  
 
-<!-- <img width="1200" height="700" alt="서비스 시연 화면" src="https://github.com/user-attachments/assets/f40ac6f1-ae7d-4da8-99bf-23ef4aa50f74" /> -->
-<img src="./orange_readme.png">
+
+<img src="./Group_195.png">
 
 - **배포 URL** : [https://sign-language-video-call-frontend.vercel.app](https://sign-language-video-call-frontend.vercel.app)
 
