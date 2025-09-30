@@ -6,10 +6,10 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 import time
 from prometheus_client import Gauge, Histogram #현재 접속사 수, 지연시간 
-from django_prometheus.exports import ExportRegistry
+from django_prometheus.exports import EXPORT_REGISTRY
 
 logger = logging.getLogger(__name__)
-registry = ExportRegistry()
+registry = EXPORT_REGISTRY()
 
 # 현재 접속자 수
 ws_active_connections = Gauge(

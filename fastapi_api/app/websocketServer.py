@@ -2,9 +2,24 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from .state import hub
 import asyncio, json, logging
 import numpy as np
+import aioredis
+from prometheus_client import Gauge, Histogram
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Prometheus 지표
+ws_active_connections = Gauge("ws_active_connections", "Number of active WS connections")
+ws_message_latency = Histogram(
+    "ws_message_latency_seconds",
+    "WebSocket message processing latency (seconds)",
+    buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5],
+)
+
+REDIS_URL = "redis://redis:6379"
+
+async def get_redis():
+    return await aioredis.from_url(REDIS_URL, decode_responses=True)
 
 # ------------------- 공통 헬퍼: 포인트/프레임 정규화 -----------------------
 def _is_point(p):
