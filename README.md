@@ -86,19 +86,39 @@
 <h2 align="left">🖼️ 아키텍처 다이어그램</h2>
 
 
-<!-- ![readme용아키텍처_compressed](https://github.com/user-attachments/assets/099248a6-e908-49c6-bf13-c30ad140d022) -->
-<img src="./readme용아키텍처_compressed.jpg">
-### 구성 요소 설명
-- **Frontend (React)** : WebRTC로 영상/음성 전송, WebSocket으로 자막(수어→텍스트) 스트림 송수신  
-- **Nginx** : TLS 종료 + 라우팅 — `/api/**` → Django/DRF, `/ai/**` · `/ws/**` → FastAPI  
-- **Django/DRF** :  
-  Auth/Middleware(JWT) → URL Router → ViewSet/API → Service/Serializer → ORM → PostgreSQL  
-- **FastAPI** :  
-  `/ws` WebSocket 서버(websocketServer.py) ↔ 프론트 양방향 통신,  
-  TFLite 추론(main.py)로 수어 랜드마크 입력 → 자막 텍스트 반환,  
-  세션/상태(state.py) 등록·해제·조회·갱신  
-- **Monitoring** :  
-  - Prometheus 스크랩 타깃: `django /metrics`, `redis_exporter`  
-  - Grafana 대시보드: HTTP p95 / 5xx / RPS, CPU·Memory 모니터링  
-  - Alertmanager: TargetDown, 5xx > 1%(5m), p95 > 500ms(10m) → Slack Firing/Resolved 알림
+<img src="./Group_194.png">
+
+## 구성 요소 설명
+
+
+### Frontend (React)
+- **WebRTC**: 영상/음성 스트림 전송
+- **WebSocket**: 자막 스트림(수어 → 텍스트) 양방향 송·수신
+
+### Nginx (TLS 종료 + 라우팅)
+요청 경로별 백엔드 라우팅:
+
+| Path Prefix | Backend       | 설명                           |
+|-------------|---------------|--------------------------------|
+| `/api/**`   | Django/DRF    | REST API, 인증 등              |
+| `/ai/**`    | FastAPI       | AI 추론 HTTP 엔드포인트        |
+| `/ws/**`    | FastAPI       | WebSocket 시그널/자막 스트림   |
+
+### Django / DRF
+요청 처리 흐름:
+`Auth/Middleware (JWT)` → `URL Router` → `ViewSet / API` → `Service / Serializer` → `ORM` → `PostgreSQL`
+
+- **Auth/Middleware(JWT)**: 인증/권한 검사
+- **ViewSet/API & Service/Serializer**: 비즈니스 로직/직렬화
+- **ORM → PostgreSQL**: 데이터 영속화
+
+### FastAPI
+- **`/ws` WebSocket 서버 (`websocketServer.py`)**: 프론트와 양방향 통신
+- **TFLite 추론 (`main.py`)**: 수어 랜드마크 입력 → 자막 텍스트 반환
+- **세션/상태 관리 (`state.py`)**: 등록 · 해제 · 조회 · 갱신
+
+### Monitoring
+- **Prometheus 스크랩 타깃**: `django /metrics`, `redis_exporter`
+- **Grafana 대시보드**: HTTP p95 / 5xx / RPS, CPU·Memory 모니터링
+- **Alertmanager 규칙**: `TargetDown`, `5xx > 1% (5m)`, `p95 > 500ms (10m)` → Slack Firing/Resolved 알림
 
