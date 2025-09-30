@@ -16,6 +16,7 @@ ws_active_connections = Gauge(
     "ws_active_connections", "Number of active WebSocket connections",
     registry=registry,
 )
+ws_active_connections.set(0)
 
 # 메시지 처리 지연 시간 (초)
 ws_message_latency = Histogram(
@@ -24,6 +25,7 @@ ws_message_latency = Histogram(
     buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5],
     registry=registry,
 )
+ws_message_latency.observe(0.0)
 
 
 class CallConsumer(AsyncWebsocketConsumer):
