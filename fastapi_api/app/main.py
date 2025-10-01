@@ -238,9 +238,18 @@ def predict_from_sequence(frames_10x21x2):
 
 
 # -------------------------- 헬스/라우팅 -----------------------------------
-@app.api_route("/ai/health", methods=["GET", "HEAD"])
-def health():
+# @app.api_route("/ai/health", methods=["GET", "HEAD"])
+# def health():
+#     return {"status": "ok", "model_loaded": _interpreter is not None}
+
+@app.get("/ai/health")
+def health_get():
     return {"status": "ok", "model_loaded": _interpreter is not None}
+
+@app.head("/ai/health")
+def health_head():
+    return
 
 app.include_router(router)
 logger.info("FastAPI 컨테이너 실행됨 (8001)")
+
