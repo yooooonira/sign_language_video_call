@@ -238,7 +238,7 @@ def predict_from_sequence(frames_10x21x2):
 
 
 # -------------------------- 헬스/라우팅 -----------------------------------
-@app.get("/ai/health", methods=["GET", "HEAD"])
+@app.api_route("/ai/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok", "model_loaded": _interpreter is not None}
 
